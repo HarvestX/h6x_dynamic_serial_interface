@@ -2,6 +2,8 @@
 #include <M5Core2.h>
 #include "imu_filter.hpp"
 #include "data_logger.hpp"
+#include "serial_comm.hpp"
+#include "protocol_definitions.hpp"
 
 #define CSV_FILENAME "/data/imu_data.csv"
 #define BUFFER_SIZE 50
@@ -55,5 +57,8 @@ void loop() {
         dataBuffer.clear();
     }
 
-    delay(10);
+    uint8_t payload[3] = {0x01, 0x02, 0x03};  // 任意のデータ
+    send_structured_packet(0x01, 0x02, 0xA0, payload, sizeof(payload));
+
+    delay(10);  // 約100Hz送信
 }
