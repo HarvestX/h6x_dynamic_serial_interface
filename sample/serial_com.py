@@ -1,4 +1,5 @@
 import serial
+import time
 
 def crc8_dallas_maxim(data: bytes) -> int:
     crc = 0x00
@@ -17,43 +18,39 @@ def main():
     print("Listening on COM12...")
 
     while True:
-        head = ser.read(1)
-        if head != b'#':
-            continue
-
-        # 固定ヘッダーを受信後、残りを受信
-        header = head[0]
-        ids = ser.read(3)
-        if len(ids) < 3:
-            print("ヘッダー直後のフィールド不足")
-            continue
-
-        device_id, target_id, command = ids
-        data = bytearray()
-
-        # 可変長受信（最大245）
-        while True:
-            b = ser.read(1)
-            if not b:
-                break
-            if b[0] == 0x0D:  # フッターなら終了
-                break
-            data.append(b[0])
-
-        if len(data) < 1:
-            print("データ部 or CRC不足")
-            continue
-
-        # CRC = データ末尾
-        crc_received = data[-1]
-        payload = data[:-1]
+        # ─────────────────────────────
+        # 送信処理：コマンドをM5Stackへ送る
+        # ─────────────────────────────
+        device_id = 0x01
+        target_id = 0x02
+        command = 0x03
+        payload = b''  # 今回はなし
         crc_input = bytes([device_id, target_id, command]) + payload
-        crc_calc = crc8_dallas_maxim(crc_input)
+        crc = crc8_dallas_maxim(crc_input)
+        packet = b'#' + bytes([device_id, target_id, command, crc]) + b'\r'
+        ser.write(packet)
+        print(f"📤 Sent command: {packet.hex()}")
 
-        if crc_calc == crc_received:
-            print("✅ 受信成功：DevID={}, TgtID={}, Cmd=0x{:02X}, Data={}".format(device_id, target_id, command, list(payload)))
+        # ─────────────────────────────
+        # 受信処理：M5Stackからの応答を待つ
+        # 応答形式: OwnID + Status + CRC + \r
+        # ─────────────────────────────
+        response = ser.read(4)
+        if len(response) == 4:
+            own_id, status, crc_recv, footer = response
+            if footer != 0x0D:
+                print("❌ 応答フッターが不正")
+                continue
+
+            crc_calc = crc8_dallas_maxim(bytes([own_id, status]))
+            if crc_calc == crc_recv:
+                print(f"✅ 応答受信: OwnID={own_id}, Status=0x{status:02X}")
+            else:
+                print("❌ CRC不一致（応答）")
         else:
-            print("❌ CRCエラー")
+            print("❌ 応答データ不足")
+
+        time.sleep(1)
 
 if __name__ == '__main__':
     main()
