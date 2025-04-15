@@ -1,15 +1,60 @@
 #include <Arduino.h>
 #include <M5Core2.h>
-#include "imu_filter.hpp"
-#include "data_logger.hpp"
 #include "serial_comm.hpp"
 #include "protocol_definitions.hpp"
 
-#define CSV_FILENAME "/data/imu_data.csv"
-#define BUFFER_SIZE 50
+#define MODE 0
 
-std::vector<String> dataBuffer;
-float offsetX = 0, offsetY = 0, offsetZ = 0;
+enum ProtocolMode {
+    MODE_BASIC,         // Basic command
+    MODE_RECEIVE_DATA,  // Data request command
+    MODE_SEND_DATA      // Data transmission (PC → M5)
+};
+
+struct ReceivedPacket {
+    ProtocolMode mode;
+    uint8_t length;
+    uint8_t header;       
+    uint8_t device_id;
+    uint8_t target_id;
+    uint8_t command;
+    uint8_t crc_recv;
+    uint8_t footer;
+    uint8_t data;  // Used only in SEND mode
+};
+
+void serial_read(ReceivedPacket& pkt) {
+    pkt.header = Serial.read();
+    if (pkt.header != '#') return;
+
+    if (pkt.mode == MODE_BASIC) {
+        // Format 1: Basic / Receive mode (# + ID + ID + CMD + CRC + \r)
+        pkt.device_id = Serial.read();
+        pkt.target_id = Serial.read();
+        pkt.command = Serial.read();
+        pkt.crc_recv = Serial.read();
+        pkt.footer = Serial.read();
+        if (pkt.footer != '\r') return;
+
+    } else if (pkt.mode == MODE_SEND_DATA) {
+        // Format 2: Data send mode (# + DATA + CRC + \r)
+        M5.Lcd.setCursor(0, 70);
+        M5.Lcd.printf("MODE_SEND_DATA\n");
+        pkt.data = Serial.read();
+        pkt.crc_recv = Serial.read();
+        pkt.footer = Serial.read();
+        if (pkt.footer != '\r') return;
+
+    } else if (pkt.mode == MODE_RECEIVE_DATA) {
+        // Format 3: Data request command (# + ID + ID + CMD + CRC + \r)
+        pkt.device_id = Serial.read();
+        pkt.target_id = Serial.read();
+        pkt.command = Serial.read();
+        pkt.crc_recv = Serial.read();
+        pkt.footer = Serial.read();
+        if (pkt.footer != '\r') return;
+    }
+}
 
 void setup() {
     M5.begin();
@@ -18,90 +63,106 @@ void setup() {
     M5.Lcd.setTextColor(GREEN, BLACK);
     M5.Lcd.setTextSize(2);
     Serial.begin(115200);
-
-    if (!initFileSystem(CSV_FILENAME)) {
-        while (1);
-    }
-
-    calibrateIMU(offsetX, offsetY, offsetZ);
 }
 
 void loop() {
-    float accX, accY, accZ, gyroX, gyroY, gyroZ, pitch, roll, yaw, temp;
+    ReceivedPacket pkt;
 
-    M5.IMU.getGyroData(&gyroX, &gyroY, &gyroZ);
-    M5.IMU.getAccelData(&accX, &accY, &accZ);
-    M5.IMU.getTempData(&temp);
-
-    updateOrientation(gyroX, gyroY, gyroZ, accX, accY, accZ,
-                      pitch, roll, yaw, offsetX, offsetY, offsetZ);
-
-    // M5.Lcd.setCursor(0, 20);
-    // M5.Lcd.printf("gyro: %6.2f %6.2f %6.2f\n", gyroX, gyroY, gyroZ);
-    // M5.Lcd.setCursor(0, 70);
-    // M5.Lcd.printf("acc : %5.2f %5.2f %5.2f\n", accX, accY, accZ);
-    // M5.Lcd.setCursor(0, 120);
-    // M5.Lcd.printf("angle: %5.2f %5.2f %5.2f\n", pitch, roll, yaw);
-    // M5.Lcd.setCursor(0, 175);
-    // M5.Lcd.printf("Temp : %.2f C", temp);
-
-    String data = String(millis()) + "," +
-                  String(accX, 6) + "," + String(accY, 6) + "," + String(accZ, 6) + "," +
-                  String(gyroX, 6) + "," + String(gyroY, 6) + "," + String(gyroZ, 6) + "," +
-                  String(pitch, 6) + "," + String(roll, 6) + "," + String(yaw, 6) + "," +
-                  String(temp, 2);
-    dataBuffer.push_back(data);
-
-    if (dataBuffer.size() >= BUFFER_SIZE) {
-        writeDataBuffered(dataBuffer, CSV_FILENAME);
-        dataBuffer.clear();
+    if (MODE == 0) {
+        pkt.mode = MODE_BASIC;
+        pkt.length = 6;
+    } else if (MODE == 1) {
+        pkt.mode = MODE_RECEIVE_DATA;
+        pkt.length = 6;
+    } else if (MODE == 2) {
+        pkt.mode = MODE_SEND_DATA;
+        pkt.length = 4;
     }
 
+    if (Serial.available() >= pkt.length) {
+        serial_read(pkt);
+        
+        if (pkt.mode == MODE_BASIC) {
+            // Format 1: Basic / Receive mode
 
-    // ─────────────────────────────
-    // Serial Communication
-    // ─────────────────────────────
-    if (Serial.available() >= 6) {
-        uint8_t header = Serial.read();
-        if (header != '#') return;
+            uint8_t crc_input[] = {
+                pkt.device_id,
+                pkt.target_id,
+                pkt.command
+            };
+            uint8_t crc_calc = crc8_calculate(crc_input, 3);
+            M5.Lcd.setCursor(0, 50);
+            M5.Lcd.printf("crc_calc: %d\n", crc_calc);
+    
+            if (crc_calc == pkt.crc_recv) {
+                // Send response (own_id, status, crc8, \r)
+                uint8_t own_id = pkt.header;
+                uint8_t status = 0x55;
+                uint8_t response[2] = {own_id, status};
+                uint8_t crc = crc8_calculate(response, 2);
+    
+                Serial.write(own_id);
+                Serial.write(status);
+                Serial.write(crc);
+                Serial.write('\r');
+            } else {
+                M5.Lcd.setCursor(0, 220);
+                M5.Lcd.printf("CRC Mismatch!\n");
+            }
+            
+        } else if(pkt.mode == MODE_RECEIVE_DATA) {
+            // Format 3: Data request command
 
-        // Reading the packet
-        uint8_t device_id = Serial.read();
-        uint8_t target_id = Serial.read();
-        uint8_t command = Serial.read();
-        uint8_t crc_recv = Serial.read();
-        uint8_t footer = Serial.read();
+            uint8_t crc_input[] = {
+                pkt.device_id,
+                pkt.target_id,
+                pkt.command
+            };
+            uint8_t crc_calc = crc8_calculate(crc_input, 3);
+            if (crc_calc == pkt.crc_recv) {
+                uint8_t own_id = pkt.header;
+                uint8_t data = 0xBB;
+                uint8_t response[2] = {own_id, data};
+                uint8_t crc = crc8_calculate(response, 2);
 
-        // debug output
-        M5.Lcd.setCursor(0, 20);
-        M5.Lcd.printf("dev: %d, tar: %d, com: %d, crc: %d\n", device_id, target_id, command, crc_recv);
+                Serial.write(own_id);
+                Serial.write(data);
+                Serial.write(crc);
+                Serial.write('\r');
+            } else {
+                M5.Lcd.setCursor(0, 220);
+                M5.Lcd.printf("CRC Mismatch!\n");
+            }
+        } else if (pkt.mode == MODE_SEND_DATA) {
+            // Format 2: Data send mode
 
-        if (footer != '\r') return;
+            M5.Lcd.setCursor(0, 20);
+            M5.Lcd.printf("data: %d, crc: %d\n", pkt.data, pkt.crc_recv);
 
-        // Calculate CRC
-        uint8_t crc_input[] = {device_id, target_id, command};
-        uint8_t crc_calc = crc8_calculate(crc_input, 3);
-        M5.Lcd.setCursor(0, 50);
-        M5.Lcd.printf("crc_calc: %d\n", crc_calc);
+            if (pkt.footer != '\r') return;
 
-        if (crc_calc == crc_recv) {
-            // ─────────────────────────────
-            // 応答送信（形式: own_id, status, crc8, \r）
-            // ─────────────────────────────
-            uint8_t own_id = target_id;  // 応答元（M5Stack）のID
-            uint8_t status = 0x55;       // 任意のステータス（成功の意など）
-            uint8_t response[2] = {own_id, status};
-            uint8_t crc = crc8_calculate(response, 2);
+            uint8_t crc_input[] = {
+                pkt.data
+            };
+            uint8_t crc_calc = crc8_calculate(crc_input, 1);
+            M5.Lcd.setCursor(0, 50);
+            M5.Lcd.printf("crc_calc: %d\n", crc_calc);
 
-            Serial.write(own_id);
-            Serial.write(status);
-            Serial.write(crc);
-            Serial.write('\r');
-        } else {
-            M5.Lcd.setCursor(0, 220);
-            M5.Lcd.printf("❌ CRC Mismatch!\n");
+            if (crc_calc == pkt.crc_recv) {
+                uint8_t own_id = pkt.header;
+                uint8_t status = 0x55;
+                uint8_t response[2] = {own_id, status};
+                uint8_t crc = crc8_calculate(response, 2);
+
+                Serial.write(own_id);
+                Serial.write(status);
+                Serial.write(crc);
+                Serial.write('\r');
+            } else {
+                M5.Lcd.setCursor(0, 220);
+                M5.Lcd.printf("CRC Mismatch!\n");
+            }
         }
     }
-
-    delay(10);  // 約100Hz送信
+    delay(10);  // ~100Hz loop
 }
