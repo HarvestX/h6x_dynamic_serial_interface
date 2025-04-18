@@ -7,11 +7,11 @@ extern "C" {
 
 #include <stdint.h>
 
-inline uint8_t crc8_calculate(const uint8_t *data, uint16_t len) {
+inline uint8_t crc8_calculate(const uint8_t *input, uint16_t len) {
   uint8_t crc = 0;
 
   for (uint16_t i = 0; i < len; i++) {
-      uint8_t extract = data[i];
+      uint8_t extract = input[i];
       for (uint8_t j = 8; j > 0; j--) {
           uint8_t sum = (crc ^ extract) & 0x01;
           crc >>= 1;

@@ -18,7 +18,7 @@ void loop() {
 
     if (Serial.available() >= LENGTH) {
         if (!serial_read(pkt)) return;
-
+        command_handler(pkt);
         send_data(pkt);
     }
 

@@ -7,8 +7,7 @@
 #define OWN_ID 0x01
 
 // === COMMAND DEFINITIONS ===
-#define DEVICE_ID 0x01
-#define CMD_PING                     0x00
+#define CMD_PING                    0x00
 #define CMD_INTERNAL_LED_ON_OFF     0x01
 #define CMD_REBOOT_DEVICE           0x02
 #define CMD_REQUEST_GENERAL_STATUS  0x03
