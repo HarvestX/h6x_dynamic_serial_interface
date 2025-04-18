@@ -3,6 +3,9 @@
 #ifndef PROTOCOL_DEFINITIONS_HPP
 #define PROTOCOL_DEFINITIONS_HPP
 
+#define LENGTH 7
+#define OWN_ID 0x01
+
 // === COMMAND DEFINITIONS ===
 #define DEVICE_ID 0x01
 #define CMD_PING                     0x00
