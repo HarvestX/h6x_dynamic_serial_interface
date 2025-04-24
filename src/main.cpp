@@ -1,8 +1,11 @@
 #include <Arduino.h>
 #include <M5Core2.h>
 #include "packet_handler.hpp"
+#include "command_handler.hpp"
 
 #define MODE 0
+
+ReceivedPacket pkt;
 
 void setup() {
     M5.begin();
@@ -14,7 +17,7 @@ void setup() {
 }
 
 void loop() {
-    ReceivedPacket pkt;
+    memset(&pkt, 0, sizeof(pkt));
 
     if (Serial.available() >= LENGTH) {
         if (!serial_read(pkt)) return;

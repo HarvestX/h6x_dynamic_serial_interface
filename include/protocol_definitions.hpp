@@ -1,7 +1,27 @@
-// protocol_definitions.hpp
-
 #ifndef PROTOCOL_DEFINITIONS_HPP
 #define PROTOCOL_DEFINITIONS_HPP
+
+enum ProtocolMode {
+  MODE_BASIC,
+  MODE_RECEIVE_DATA,
+  MODE_SEND_DATA
+};
+
+struct ReceivedPacket {
+  ProtocolMode mode;
+  uint8_t length;
+  uint8_t header;
+  uint8_t device_id;
+  uint8_t target_id;
+  uint8_t command;
+  uint8_t status;
+  uint8_t crc_recv;
+  uint8_t crc_send;
+  uint8_t footer;
+  uint8_t recv_data[245];
+  uint8_t send_data[245];
+  uint8_t send_data_len;
+};
 
 #define LENGTH 7
 #define OWN_ID 0x01
