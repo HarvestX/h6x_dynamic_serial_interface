@@ -25,6 +25,7 @@ struct ReceivedPacket {
 
 #define LENGTH 7
 #define OWN_ID 0x01
+#define VERSION 0x01
 
 // === COMMAND DEFINITIONS ===
 #define CMD_PING                    0x00

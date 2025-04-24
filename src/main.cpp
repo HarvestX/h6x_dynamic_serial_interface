@@ -5,8 +5,6 @@
 
 #define MODE 0
 
-ReceivedPacket pkt;
-
 void setup() {
     M5.begin();
     M5.IMU.Init();
@@ -17,6 +15,7 @@ void setup() {
 }
 
 void loop() {
+    ReceivedPacket pkt;
     memset(&pkt, 0, sizeof(pkt));
 
     if (Serial.available() >= LENGTH) {

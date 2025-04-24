@@ -7,7 +7,7 @@ DEVICE_ID = 0x01
 CMD_PING                       = 0x00
 CMD_INTERNAL_LED_ON_OFF       = 0x01
 CMD_REBOOT_DEVICE             = 0x02
-CMD_REQUEST_GENERAL_STATUS    = 0x03
+CMD_REQUEST_GENERAL_STATUS    = 0x03  # これは CMD_REQUEST_FIRMWARE_VERSION と同じ値
 CMD_REQUEST_FIRMWARE_VERSION  = 0x03
 CMD_REQUEST_DEVICE_TICK       = 0x10
 CMD_REQUEST_INTERNAL_ID       = 0x11
@@ -53,12 +53,11 @@ def main():
         # ─────────────────────────────
         target_id = 0x01
         command = CMD_PING
-        length = 0x07
-        data = 0xAA
+        data_bytes = bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08])
         payload = b''
-        crc_input = bytes([target_id, command, length, data]) + payload
+        crc_input = bytes([target_id, command, len(data_bytes)]) + data_bytes + payload
         crc = crc8_dallas_maxim(crc_input)
-        packet = b'#' + bytes([target_id, command, length, data, crc]) + b'\r'
+        packet = b'#' + bytes([target_id, command, len(data_bytes)]) + data_bytes + bytes([crc]) + b'\r'
         ser.write(packet)
         print(f"Sent command: {packet.hex()}")
 
@@ -73,19 +72,25 @@ def main():
             continue
         own_id = head
 
-        response = ser.read(6)
-        if len(response) == 6:
-            own_id, status, length, data, crc_recv, footer = response
-            print(f"Received: {response.hex()}")
+        response = ser.read(3)
+        if len(response) == 3:
+            own_id, status, length = response
+            data = ser.read(length)
+            print(f"Received: {response.hex()}{data.hex()}")
+            response_2 = ser.read(2)
+            crc_recv, footer = response_2
+            print(f"Received: {response.hex()}{data.hex()}{response_2.hex()}")
+
             if footer != 0x0D:
                 print("Incorrect response footer")
                 continue
 
-            crc_calc = crc8_dallas_maxim(bytes([own_id, status, length, data]))
+            crc_calc = crc8_dallas_maxim(bytes([own_id, status, length]) + data)
             if crc_calc == crc_recv:
-                print(f"Acknowledgment: OwnID={own_id}, Status=0x{status:02X}, Length=0x{length:02X}, Data=0x{data:02X}, CRC=0x{crc:02X}")
+                print(f"Acknowledgment: OwnID={own_id}, Status=0x{status:02X}, Length=0x{length:02X}, Data={data.hex()}, CRC=0x{crc_recv:02X}")
             else:
                 print(f"CRC mismatch: calculated=0x{crc_calc:02X}, received=0x{crc_recv:02X}")
+
         else:
             print("Response data insufficiency")
 

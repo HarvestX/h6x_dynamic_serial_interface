@@ -22,32 +22,31 @@ void concat_arrays(const uint8_t* a, uint8_t len_a,
   *result_len = len_a + len_b;
 }
 
-void ping_processor(ReceivedPacket& pkt) {
-  if (pkt.command == CMD_PING) {
-      uint8_t crc_data_len = 0;
-      uint8_t send_data[] = {0xAA, 0xBB, 0xCC, 0xDD};
-      memcpy(pkt.send_data, send_data, sizeof(send_data));
-      pkt.send_data_len = 4;
-      pkt.status = 0x01;
-      uint8_t response_len = 3;
-      uint8_t response[response_len] = {OWN_ID, pkt.status, pkt.send_data_len};
-      uint8_t crc_data[pkt.send_data_len + response_len];
-      std::copy(response, response + response_len, crc_data);
-      std::copy(pkt.send_data, pkt.send_data + pkt.send_data_len, crc_data + response_len);
-      crc_data_len = response_len + pkt.send_data_len;
+uint8_t create_crc_data(ReceivedPacket& pkt, const uint8_t* data, uint8_t len, uint8_t status) {
+  uint8_t crc_data_len = 0;
+  // uint8_t send_data[] = {0xAA, 0xBB, 0xCC, 0xDD};
+  memcpy(pkt.send_data, data, sizeof(data));
+  pkt.send_data_len = len;
+  pkt.status = status;
+  uint8_t response_len = 3;
+  uint8_t response[response_len] = {OWN_ID, pkt.status, pkt.send_data_len};
+  uint8_t crc_data[pkt.send_data_len + response_len];
+  std::copy(response, response + response_len, crc_data);
+  std::copy(pkt.send_data, pkt.send_data + pkt.send_data_len, crc_data + response_len);
+  crc_data_len = response_len + pkt.send_data_len;
 
-      M5.Lcd.printf("crc_data: ");
-      for (int i = 0; i < crc_data_len; ++i) {
-          M5.Lcd.printf("%02X ", crc_data[i]);
-      }
-      M5.Lcd.println();
-      pkt.crc_send = crc8_calculate(crc_data, crc_data_len);
-  } 
+  M5.Lcd.printf("crc_data: ");
+  for (int i = 0; i < crc_data_len; ++i) {
+      M5.Lcd.printf("%02X ", crc_data[i]);
+  }
+  M5.Lcd.println();
+  return crc8_calculate(crc_data, crc_data_len);
 }
 
 void led_processor(ReceivedPacket& pkt) {
   if (pkt.command == CMD_INTERNAL_LED_ON_OFF) {
       pkt.status = ERR_SUCCESS;
+
       //pkt.data = 0x00;
   }
 }
@@ -115,27 +114,45 @@ void request_general_status(ReceivedPacket& pkt) {
 
 void command_handler(ReceivedPacket& pkt) {
   switch (pkt.command) {
-      case CMD_PING:
+      case CMD_PING: {
           M5.Lcd.setCursor(0, 150);
           M5.Lcd.printf("PING command\n");
-          ping_processor(pkt);
+          uint8_t send_data_len = 4;
+          uint8_t send_data[] = {0xAA, 0xBB, 0xCC, 0xDD};
+          uint8_t status = ERR_SUCCESS;
+          pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, status);
           break;
-      case CMD_INTERNAL_LED_ON_OFF:
+      }
+      case CMD_INTERNAL_LED_ON_OFF: {
           M5.Lcd.setCursor(0, 150);
           M5.Lcd.printf("LED command\n");
+          uint8_t send_data_len = 1;
+          uint8_t send_data[] = {0};
+          uint8_t status = ERR_SUCCESS;
+          pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, status);
           break;
-      case CMD_REBOOT_DEVICE:
+      }
+      case CMD_REBOOT_DEVICE: {
           M5.Lcd.setCursor(0, 150);
           M5.Lcd.printf("REBOOT command\n");
+          uint8_t send_data_len = 1;
+          uint8_t send_data[] = {0};
+          uint8_t status = ERR_SUCCESS;
+          pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, status);
           reboot_processor(pkt);
           break;
-      case CMD_REQUEST_GENERAL_STATUS:
+      }
+      case CMD_REQUEST_GENERAL_STATUS: {
           M5.Lcd.setCursor(0, 150);
           M5.Lcd.printf("STATUS command\n");
           M5.Lcd.printf("VERSION command\n");
-          request_processor(pkt);
-          request_firmware_version(pkt);
+          uint8_t send_data_len = 1;
+          uint8_t send_data[] = {VERSION};
+          uint8_t status = ERR_SUCCESS;
+          pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, status);
           break;
+      }
+
       case CMD_REQUEST_DEVICE_TICK:
           M5.Lcd.setCursor(0, 150);
           M5.Lcd.printf("TICK command\n");
