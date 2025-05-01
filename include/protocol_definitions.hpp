@@ -1,6 +1,10 @@
 #ifndef PROTOCOL_DEFINITIONS_HPP
 #define PROTOCOL_DEFINITIONS_HPP
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum ProtocolMode {
   MODE_BASIC,
   MODE_RECEIVE_DATA,
@@ -21,6 +25,8 @@ struct ReceivedPacket {
   uint8_t recv_data[245];
   uint8_t send_data[245];
   uint8_t send_data_len;
+  uint32_t start_tick;
+  uint32_t elapsed_tick;
 };
 
 #define LENGTH 7
@@ -39,6 +45,9 @@ struct ReceivedPacket {
 #define CMD_REQUEST_DEVICE_VENDOR   0x13
 #define CMD_REQUEST_DEVICE_NAME     0x14
 #define CMD_REQUEST_CURRENT_STATE   0x15
+#define CMD_REQUEST_IMU             0x20
+#define CMD_REQUEST_CARRIPLATION_STATUS     0x21
+#define CMD_REQUEST_CARRIPLATION_EXECUSION  0x96
 
 // === ERROR CODES ===
 #define ERR_SUCCESS         0x00
@@ -49,5 +58,9 @@ struct ReceivedPacket {
 #define ERR_BUSY            0x05
 #define ERR_BUFFER_FULL     0x06
 #define ERR_OTHER           0xFF
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // PROTOCOL_DEFINITIONS_HPP

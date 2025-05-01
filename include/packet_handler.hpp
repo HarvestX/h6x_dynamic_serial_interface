@@ -1,6 +1,10 @@
 #ifndef PACKET_HANDLER_HPP
 #define PACKET_HANDLER_HPP
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #pragma once
 #include <M5Core2.h>
 #include <string.h>
@@ -24,18 +28,15 @@ bool serial_read(ReceivedPacket& pkt) {
   pkt.footer = Serial.read();
 
   M5.Lcd.setCursor(0, 20);
+  M5.Lcd.printf("=== RECV ===");
   M5.Lcd.printf("target_id: %02X\n", pkt.target_id);
   M5.Lcd.printf("command: %02X\n", pkt.command);
-  M5.Lcd.printf("length: %02X\n", pkt.length);
   
   M5.Lcd.print("recv_data: ");
   for (int i = 0; i < pkt.length; ++i) {
       M5.Lcd.printf("%02X ", pkt.recv_data[i]);
   }
   M5.Lcd.println();
-
-  M5.Lcd.printf("crc_recv: %02X\n", pkt.crc_recv);
-  M5.Lcd.printf("footer: %02X\n", pkt.footer);
 
   return pkt.footer == '\r';
 }
@@ -51,9 +52,6 @@ void send_data(ReceivedPacket& pkt){
   if (crc_calc == pkt.crc_recv) {;
       command_handler(pkt);
 
-      M5.Lcd.setCursor(0, 200);
-      M5.Lcd.printf("CRC : %02X\n", pkt.crc_send);
-
       Serial.write('$');
       Serial.write(OWN_ID);
       Serial.write(pkt.status);
@@ -66,11 +64,15 @@ void send_data(ReceivedPacket& pkt){
       Serial.write(pkt.crc_send);
       Serial.write('\r');
 
-      // M5.Lcd.setCursor(0, 100);
-      // M5.Lcd.printf("send_data: ");
-      // for (int i = 0; i < pkt.send_data_len; ++i) {
-      //     M5.Lcd.printf("%02X ", pkt.send_data[i]);
-      // }
+      M5.Lcd.setCursor(0, 150);
+      M5.Lcd.printf("=== SEND ===");
+      M5.Lcd.printf("status: %02X\n", pkt.status);
+      M5.Lcd.printf("send_data_len: ");
+      for (int i = 0; i < pkt.send_data_len; ++i) {
+          M5.Lcd.printf("%02X ", pkt.send_data[i]);
+      }
+      M5.Lcd.println();
+
 
   } else {
       M5.Lcd.setCursor(0, 220);
@@ -78,5 +80,9 @@ void send_data(ReceivedPacket& pkt){
       
   }
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

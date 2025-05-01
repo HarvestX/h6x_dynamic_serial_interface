@@ -3,6 +3,7 @@
 #include "packet_handler.hpp"
 #include "command_handler.hpp"
 
+
 #define MODE 0
 
 void setup() {
@@ -12,12 +13,12 @@ void setup() {
     M5.Lcd.setTextColor(GREEN, BLACK);
     M5.Lcd.setTextSize(2);
     Serial.begin(115200);
+    unsigned long start_tick = millis();
 }
 
 void loop() {
     ReceivedPacket pkt;
     memset(&pkt, 0, sizeof(pkt));
-
     if (Serial.available() >= LENGTH) {
         if (!serial_read(pkt)) return;
         command_handler(pkt);
