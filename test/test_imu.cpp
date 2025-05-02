@@ -14,52 +14,55 @@ const int ROLL_DOWN_POINT = 41497;
 const int PITCH_DOWN_POINT = 22495;
 
 
-struct IMUData {
-    double time;
-    double accX, accY, accZ;
-    double gyroX, gyroY, gyroZ;
-    double pitch, roll, yaw;
-    double temp;
+struct IMUData
+{
+  double time;
+  double accX, accY, accZ;
+  double gyroX, gyroY, gyroZ;
+  double pitch, roll, yaw;
+  double temp;
 };
 
-std::vector<IMUData> loadIMUData(const std::string& filename) {
-    std::vector<IMUData> data;
+std::vector<IMUData> loadIMUData(const std::string & filename)
+{
+  std::vector<IMUData> data;
 
-    if (!SPIFFS.begin(true)) {
-        Serial.println("SPIFFS Mount Failed");
-        throw std::runtime_error("SPIFFS Mount Failed");
-    }
-    
-    std::string path = "/data/" + filename;
-    Serial.print("Opening file: ");
-    Serial.println(path.c_str());
+  if (!SPIFFS.begin(true)) {
+    Serial.println("SPIFFS Mount Failed");
+    throw std::runtime_error("SPIFFS Mount Failed");
+  }
 
-    File file = SPIFFS.open(path.c_str());
-    if (!file || file.isDirectory()) {
-        Serial.println("Failed to open file for reading");
-        throw std::runtime_error("Failed to open file for reading");
-    }
+  std::string path = "/data/" + filename;
+  Serial.print("Opening file: ");
+  Serial.println(path.c_str());
 
-    std::string line;
-    bool skip_header = true;
-    while (file.available()) {
-        line = file.readStringUntil('\n').c_str();
-        if (skip_header) { 
-            skip_header = false;
-            continue;
-        }
+  File file = SPIFFS.open(path.c_str());
+  if (!file || file.isDirectory()) {
+    Serial.println("Failed to open file for reading");
+    throw std::runtime_error("Failed to open file for reading");
+  }
 
-        IMUData entry;
-        sscanf(line.c_str(), "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",
-               &entry.time, &entry.accX, &entry.accY, &entry.accZ,
-               &entry.gyroX, &entry.gyroY, &entry.gyroZ,
-               &entry.pitch, &entry.roll, &entry.yaw, &entry.temp);
-        data.push_back(entry);
+  std::string line;
+  bool skip_header = true;
+  while (file.available()) {
+    line = file.readStringUntil('\n').c_str();
+    if (skip_header) {
+      skip_header = false;
+      continue;
     }
 
-    file.close();
-    Serial.println("File read completed");
-    return data;
+    IMUData entry;
+    sscanf(
+      line.c_str(), "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",
+      &entry.time, &entry.accX, &entry.accY, &entry.accZ,
+      &entry.gyroX, &entry.gyroY, &entry.gyroZ,
+      &entry.pitch, &entry.roll, &entry.yaw, &entry.temp);
+    data.push_back(entry);
+  }
+
+  file.close();
+  Serial.println("File read completed");
+  return data;
 }
 
 // // Test the degree of convergence of roll after tilting
@@ -82,7 +85,7 @@ std::vector<IMUData> loadIMUData(const std::string& filename) {
 //     }
 
 //     if(!is_reach){
-//         FAIL() << "Didn't reach [roll]";   
+//         FAIL() << "Didn't reach [roll]";
 //     }
 // }
 
@@ -106,7 +109,7 @@ std::vector<IMUData> loadIMUData(const std::string& filename) {
 //     }
 
 //     if(!is_reach){
-//         FAIL() << "Didn't reach [roll]";   
+//         FAIL() << "Didn't reach [roll]";
 //     }
 // }
 
@@ -159,36 +162,39 @@ std::vector<IMUData> loadIMUData(const std::string& filename) {
 // }
 
 TEST(CRC8Test, KnownValues) {
-    // 例1: データ {0x01, 0x02, 0x03, 0x04}
-    const uint8_t test_data1[] = {0x01, 0x02, 0x03, 0x04};
-    uint8_t crc1 = crc8_calculate(test_data1, sizeof(test_data1));
-    EXPECT_EQ(crc1, 0xA7);  // ←この値は実際にcrc8_calculateで計算した結果に置き換えてください
+  // 例1: データ {0x01, 0x02, 0x03, 0x04}
+  const uint8_t test_data1[] = {0x01, 0x02, 0x03, 0x04};
+  uint8_t crc1 = crc8_calculate(test_data1, sizeof(test_data1));
+  EXPECT_EQ(crc1, 0xA7);    // ←この値は実際にcrc8_calculateで計算した結果に置き換えてください
 
-    // 例2: データ {0xFF, 0xFF, 0xFF}
-    const uint8_t test_data2[] = {0xFF, 0xFF, 0xFF};
-    uint8_t crc2 = crc8_calculate(test_data2, sizeof(test_data2));
-    EXPECT_EQ(crc2, 0xAC);  // ←これも実測値に合わせて修正
+  // 例2: データ {0xFF, 0xFF, 0xFF}
+  const uint8_t test_data2[] = {0xFF, 0xFF, 0xFF};
+  uint8_t crc2 = crc8_calculate(test_data2, sizeof(test_data2));
+  EXPECT_EQ(crc2, 0xAC);    // ←これも実測値に合わせて修正
 
-    // 例3: 空データ
-    const uint8_t test_data3[] = {};
-    uint8_t crc3 = crc8_calculate(test_data3, 0);
-    EXPECT_EQ(crc3, 0x00);  // 通常、空データに対しては初期値がそのまま返る
+  // 例3: 空データ
+  const uint8_t test_data3[] = {};
+  uint8_t crc3 = crc8_calculate(test_data3, 0);
+  EXPECT_EQ(crc3, 0x00);    // 通常、空データに対しては初期値がそのまま返る
 }
 
 #if defined(ARDUINO)
 #include <Arduino.h>
-void setup() {
-    Serial.begin(115200);
-    ::testing::InitGoogleTest();
+void setup()
+{
+  Serial.begin(115200);
+  ::testing::InitGoogleTest();
 }
 
-void loop() {
-    if (RUN_ALL_TESTS()){}
-    delay(1000);
+void loop()
+{
+  if (RUN_ALL_TESTS()) {}
+  delay(1000);
 }
 #else
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
 #endif

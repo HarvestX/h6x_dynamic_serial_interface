@@ -6,24 +6,26 @@
 
 #define MODE 0
 
-void setup() {
-    M5.begin();
-    M5.IMU.Init();
-    M5.Lcd.fillScreen(BLACK);
-    M5.Lcd.setTextColor(GREEN, BLACK);
-    M5.Lcd.setTextSize(2);
-    Serial.begin(115200);
-    unsigned long start_tick = millis();
+void setup()
+{
+  M5.begin();
+  M5.IMU.Init();
+  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.setTextColor(GREEN, BLACK);
+  M5.Lcd.setTextSize(2);
+  Serial.begin(115200);
+  unsigned long start_tick = millis();
 }
 
-void loop() {
-    ReceivedPacket pkt;
-    memset(&pkt, 0, sizeof(pkt));
-    if (Serial.available() >= LENGTH) {
-        if (!serial_read(pkt)) return;
-        command_handler(pkt);
-        send_data(pkt);
-    }
+void loop()
+{
+  ReceivedPacket pkt;
+  memset(&pkt, 0, sizeof(pkt));
+  if (Serial.available() >= LENGTH) {
+    if (!serial_read(pkt)) {return;}
+    command_handler(pkt);
+    send_data(pkt);
+  }
 
-    delay(10); // ~100Hz loop
+  delay(10);   // ~100Hz loop
 }

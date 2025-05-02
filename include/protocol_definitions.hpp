@@ -5,13 +5,15 @@
 extern "C" {
 #endif
 
-enum ProtocolMode {
+enum ProtocolMode
+{
   MODE_BASIC,
   MODE_RECEIVE_DATA,
   MODE_SEND_DATA
 };
 
-struct ReceivedPacket {
+struct ReceivedPacket
+{
   ProtocolMode mode;
   uint8_t length;
   uint8_t header;
@@ -32,6 +34,7 @@ struct ReceivedPacket {
 #define LENGTH 7
 #define OWN_ID 0x01
 #define VERSION 0x01
+#define NOW_CALIBRATING 0x05
 
 // === COMMAND DEFINITIONS ===
 #define CMD_PING                    0x00
