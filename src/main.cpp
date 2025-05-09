@@ -1,10 +1,12 @@
 #include <Arduino.h>
 #include <M5Core2.h>
-#include "packet_handler.hpp"
+#include "packet_handler.h"
 #include "command_handler.hpp"
+#include "serial_handler.hpp"
 
+ReceivedPacket pkt;
 
-#define MODE 0
+#define LENGTH 7
 
 void setup()
 {
@@ -19,12 +21,18 @@ void setup()
 
 void loop()
 {
-  ReceivedPacket pkt;
   memset(&pkt, 0, sizeof(pkt));
   if (Serial.available() >= LENGTH) {
-    if (!serial_read(pkt)) {return;}
-    command_handler(pkt);
-    send_data(pkt);
+    if (!serial_read(pkt)) {
+      M5.Lcd.setCursor(0, 0);
+      M5.Lcd.printf("Failed read\n");
+      return;
+    }
+    if (!serial_write(pkt)) {
+      M5.Lcd.setCursor(0, 0);
+      M5.Lcd.printf("Failed write\n");
+      return;
+    }
   }
 
   delay(10);   // ~100Hz loop

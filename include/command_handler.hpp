@@ -11,7 +11,7 @@ extern "C" {
 #include <stdint.h>
 #include <cmath>
 #include "protocol_definitions.hpp"
-#include "crc8.hpp"
+#include "crc8.h"
 #include "imu_filter.hpp"
 
 #define CALIBRATION_TIME 200  // Number of cycles for gyro calibration
@@ -122,37 +122,27 @@ void command_handler(ReceivedPacket & pkt)
 {
   switch (pkt.command) {
     case CMD_PING: {
-        M5.Lcd.setCursor(0, 200);
-        M5.Lcd.printf("PING command");
         uint8_t send_data[] = {0x00};
         pkt.crc_send = create_crc_data(pkt, send_data, 1, ERR_SUCCESS);
         break;
       }
     case CMD_INTERNAL_LED_ON_OFF: {
-        M5.Lcd.setCursor(0, 200);
-        M5.Lcd.printf("LED command");
         uint8_t send_data[] = {0x00};
         pkt.crc_send = create_crc_data(pkt, send_data, 1, ERR_SUCCESS);
         break;
       }
     case CMD_REBOOT_DEVICE: {
-        M5.Lcd.setCursor(0, 200);
-        M5.Lcd.printf("REBOOT command");
         uint8_t send_data[] = {0x00};
         pkt.crc_send = create_crc_data(pkt, send_data, 1, ERR_SUCCESS);
         ESP.restart();   // Reboot the ESP32 device
         break;
       }
     case CMD_REQUEST_GENERAL_STATUS: {
-        M5.Lcd.setCursor(0, 200);
-        M5.Lcd.printf("STATUS & VERSION command");
         uint8_t send_data[] = {VERSION};
         pkt.crc_send = create_crc_data(pkt, send_data, 1, ERR_SUCCESS);
         break;
       }
     case CMD_REQUEST_DEVICE_TICK: {
-        M5.Lcd.setCursor(0, 200);
-        M5.Lcd.printf("TICK command");
         pkt.elapsed_tick = millis() - pkt.start_tick;
         uint8_t send_data[4];
         uint8_t send_data_len;
@@ -161,15 +151,11 @@ void command_handler(ReceivedPacket & pkt)
         break;
       }
     case CMD_REQUEST_INTERNAL_ID: {
-        M5.Lcd.setCursor(0, 200);
-        M5.Lcd.printf("ID command");
         uint8_t send_data[] = {0x10, 0x11, 0x12, 0x13};
         pkt.crc_send = create_crc_data(pkt, send_data, 4, ERR_SUCCESS);
         break;
       }
     case CMD_REQUEST_FIRMWARE_WRITE_DATE: {
-        M5.Lcd.setCursor(0, 200);
-        M5.Lcd.printf("DATE command");
         uint8_t send_data[16];
         uint8_t send_data_len = 0;
         convert_date_to_ascii_array("2025/04/25", send_data, &send_data_len);
@@ -177,8 +163,6 @@ void command_handler(ReceivedPacket & pkt)
         break;
       }
     case CMD_REQUEST_DEVICE_VENDOR: {
-        M5.Lcd.setCursor(0, 200);
-        M5.Lcd.printf("DEVICE-VENDOR command");
         uint8_t send_data[16];
         uint8_t send_data_len = 0;
         convert_date_to_ascii_array("Espressif", send_data, &send_data_len);
@@ -186,8 +170,6 @@ void command_handler(ReceivedPacket & pkt)
         break;
       }
     case CMD_REQUEST_DEVICE_NAME: {
-        M5.Lcd.setCursor(0, 200);
-        M5.Lcd.printf("DEVICE-NAME command");
         uint8_t send_data[16];
         uint8_t send_data_len = 0;
         convert_date_to_ascii_array("ESP32", send_data, &send_data_len);
@@ -195,25 +177,16 @@ void command_handler(ReceivedPacket & pkt)
         break;
       }
     case CMD_REQUEST_CURRENT_STATE: {
-        M5.Lcd.setCursor(0, 200);
-        M5.Lcd.printf("CURRENT-STATE command");
         uint8_t send_data[] = {0x0F};
         pkt.crc_send = create_crc_data(pkt, send_data, 1, ERR_SUCCESS);
         break;
       }
     case CMD_REQUEST_IMU: {
-        M5.Lcd.setCursor(0, 180);
-        M5.Lcd.printf("IMU command");
         unsigned long now = millis();
         float dt = (now - prev_time) / 1000.0f;
         prev_time = now;
-
         // Update RPY values from IMU
         uint8_t status = updateRPYFromIMU(dt, &roll, &pitch, &yaw);
-
-        M5.Lcd.setCursor(0, 200);
-        M5.Lcd.printf("R:%.2f P:%.2f Y:%.2f", roll, pitch, yaw);
-
         uint8_t send_data[16];
         memcpy(send_data, &roll, sizeof(float));
         memcpy(send_data + 4, &pitch, sizeof(float));
@@ -224,8 +197,6 @@ void command_handler(ReceivedPacket & pkt)
         break;
       }
     case CMD_REQUEST_CARRIPLATION_STATUS: {
-        M5.Lcd.setCursor(0, 200);
-        M5.Lcd.printf("CARRIPLATION-STATUS command");
         uint8_t status;
         if (calibration_count == CALIBRATION_TIME) {
           status = 0x02;
@@ -240,8 +211,6 @@ void command_handler(ReceivedPacket & pkt)
         break;
       }
     case CMD_REQUEST_CARRIPLATION_EXECUSION: {
-        M5.Lcd.setCursor(0, 200);
-        M5.Lcd.printf("CARRIPLATION-EXECUSION command");
         uint8_t status = ERR_SUCCESS;
 
         if (calibration_count < CALIBRATION_TIME) {
@@ -250,9 +219,6 @@ void command_handler(ReceivedPacket & pkt)
           M5.IMU.getGyroData(&gx, &gy, &gz);
           updateCalibration(gx, gy, gz);
           calibration_count++;
-
-          M5.Lcd.setCursor(0, 220);
-          M5.Lcd.printf("Calibration %d/%d", calibration_count, CALIBRATION_TIME);
           status = NOW_CALIBRATING;
         }
 
@@ -261,8 +227,6 @@ void command_handler(ReceivedPacket & pkt)
         break;
       }
     default: {
-        M5.Lcd.setCursor(0, 200);
-        M5.Lcd.printf("Unknown command");
         break;
       }
   }

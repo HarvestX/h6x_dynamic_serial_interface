@@ -5,16 +5,9 @@
 extern "C" {
 #endif
 
-enum ProtocolMode
-{
-  MODE_BASIC,
-  MODE_RECEIVE_DATA,
-  MODE_SEND_DATA
-};
 
 struct ReceivedPacket
 {
-  ProtocolMode mode;
   uint8_t length;
   uint8_t header;
   uint8_t device_id;
@@ -31,10 +24,8 @@ struct ReceivedPacket
   uint32_t elapsed_tick;
 };
 
-#define LENGTH 7
 #define OWN_ID 0x01
 #define VERSION 0x01
-#define NOW_CALIBRATING 0x05
 
 // === COMMAND DEFINITIONS ===
 #define CMD_PING                    0x00
@@ -61,6 +52,7 @@ struct ReceivedPacket
 #define ERR_BUSY            0x05
 #define ERR_BUFFER_FULL     0x06
 #define ERR_OTHER           0xFF
+#define NOW_CALIBRATING     0x05
 
 #ifdef __cplusplus
 }
