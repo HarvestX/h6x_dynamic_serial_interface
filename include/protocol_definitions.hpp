@@ -24,6 +24,7 @@ struct ReceivedPacket
   uint32_t elapsed_tick;
 };
 
+
 #define OWN_ID 0x01
 #define VERSION 0x01
 

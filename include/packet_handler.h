@@ -46,15 +46,19 @@ bool check_crc(ReceivedPacket & pkt)
   return crc_calc == pkt.crc_recv;
 }
 
-bool create_send_packet(ReceivedPacket & pkt, char* send_packet)
+bool create_send_packet(ReceivedPacket & pkt, char* send_packet, uint8_t mode)
 {
   send_packet[0] = '$';                        // Header
   send_packet[1] = OWN_ID;                    // Source ID
-  send_packet[2] = pkt.status;                // Status
-  send_packet[3] = pkt.send_data_len;         // Payload length
-  memcpy(send_packet + 4, pkt.send_data, pkt.send_data_len); // Payload
-  send_packet[pkt.send_data_len + 4] = pkt.crc_send; // CRC
-  send_packet[pkt.send_data_len + 5] = '\r'; // Footer
+  if (mode == 1){
+    send_packet[2] = pkt.command; // Command
+  }
+  send_packet[2 + mode] = pkt.status;                // Status
+  send_packet[3 + mode] = pkt.send_data_len;         // Payload length
+
+  memcpy(send_packet + mode + 4, pkt.send_data, pkt.send_data_len); // Payload
+  send_packet[pkt.send_data_len + mode + 4] = pkt.crc_send; // CRC
+  send_packet[pkt.send_data_len + mode + 5] = '\r'; // Footer
 
   return true; // Successful creation of send data
 } 

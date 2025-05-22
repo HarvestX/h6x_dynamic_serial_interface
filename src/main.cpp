@@ -6,6 +6,7 @@
 
 ReceivedPacket pkt;
 
+#define MODE 0
 #define LENGTH 7
 
 void setup()
@@ -28,12 +29,11 @@ void loop()
       M5.Lcd.printf("Failed read\n");
       return;
     }
-    if (!serial_write(pkt)) {
+    if (!serial_write(pkt, MODE)) {
       M5.Lcd.setCursor(0, 0);
       M5.Lcd.printf("Failed write\n");
       return;
     }
   }
-
   delay(10);   // ~100Hz loop
 }

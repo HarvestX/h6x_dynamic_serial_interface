@@ -13,6 +13,7 @@ extern "C" {
 #include "protocol_definitions.hpp"
 #include "crc8.h"
 #include "imu_filter.hpp"
+#include "cpu_usage_handler.hpp"
 
 #define CALIBRATION_TIME 200  // Number of cycles for gyro calibration
 
@@ -101,45 +102,53 @@ void concat_arrays(
 }
 
 // Create CRC-8 checksum based on status and payload
-uint8_t create_crc_data(ReceivedPacket & pkt, const uint8_t * data, uint8_t len, uint8_t status)
+uint8_t create_crc_data(ReceivedPacket & pkt, const uint8_t * data, uint8_t len, uint8_t status, uint8_t mode)
 {
   pkt.send_data_len = len;
   pkt.status = status;
   memcpy(pkt.send_data, data, len);
 
-  uint8_t response_len = 3;
-  uint8_t response[response_len] = {OWN_ID, pkt.status, pkt.send_data_len};
-  uint8_t crc_data[pkt.send_data_len + response_len];
+  uint8_t response_len = (mode == 1) ? 4 : 3;
+  uint8_t response[response_len];
+  response[0] = OWN_ID;
+  if (mode == 1) {
+    response[1] = pkt.command;
+  }
+  response[1 + mode] = pkt.status;
+  response[2 + mode] = pkt.send_data_len;
 
+  uint8_t crc_data[pkt.send_data_len + response_len];
   std::copy(response, response + response_len, crc_data);
   std::copy(pkt.send_data, pkt.send_data + pkt.send_data_len, crc_data + response_len);
 
   return crc8_calculate(crc_data, pkt.send_data_len + response_len);
 }
 
+
+
 // Main command handler for all defined commands
-void command_handler(ReceivedPacket & pkt)
+void command_handler(ReceivedPacket & pkt, uint8_t mode)
 {
   switch (pkt.command) {
     case CMD_PING: {
         uint8_t send_data[] = {0x00};
-        pkt.crc_send = create_crc_data(pkt, send_data, 1, ERR_SUCCESS);
+        pkt.crc_send = create_crc_data(pkt, send_data, 1, ERR_SUCCESS, mode);
         break;
       }
     case CMD_INTERNAL_LED_ON_OFF: {
         uint8_t send_data[] = {0x00};
-        pkt.crc_send = create_crc_data(pkt, send_data, 1, ERR_SUCCESS);
+        pkt.crc_send = create_crc_data(pkt, send_data, 1, ERR_SUCCESS, mode);
         break;
       }
     case CMD_REBOOT_DEVICE: {
         uint8_t send_data[] = {0x00};
-        pkt.crc_send = create_crc_data(pkt, send_data, 1, ERR_SUCCESS);
+        pkt.crc_send = create_crc_data(pkt, send_data, 1, ERR_SUCCESS, mode);
         ESP.restart();   // Reboot the ESP32 device
         break;
       }
     case CMD_REQUEST_GENERAL_STATUS: {
-        uint8_t send_data[] = {VERSION};
-        pkt.crc_send = create_crc_data(pkt, send_data, 1, ERR_SUCCESS);
+        uint8_t send_data[] = {0x05, VERSION};
+        pkt.crc_send = create_crc_data(pkt, send_data, 2, ERR_SUCCESS, mode);
         break;
       }
     case CMD_REQUEST_DEVICE_TICK: {
@@ -147,53 +156,61 @@ void command_handler(ReceivedPacket & pkt)
         uint8_t send_data[4];
         uint8_t send_data_len;
         big_endian(pkt.elapsed_tick, send_data, &send_data_len);
-        pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS);
+        pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS, mode);
         break;
       }
     case CMD_REQUEST_INTERNAL_ID: {
         uint8_t send_data[] = {0x10, 0x11, 0x12, 0x13};
-        pkt.crc_send = create_crc_data(pkt, send_data, 4, ERR_SUCCESS);
+        pkt.crc_send = create_crc_data(pkt, send_data, 4, ERR_SUCCESS, mode);
         break;
       }
     case CMD_REQUEST_FIRMWARE_WRITE_DATE: {
         uint8_t send_data[16];
         uint8_t send_data_len = 0;
         convert_date_to_ascii_array("2025/04/25", send_data, &send_data_len);
-        pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS);
+        pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS, mode);
         break;
       }
     case CMD_REQUEST_DEVICE_VENDOR: {
         uint8_t send_data[16];
         uint8_t send_data_len = 0;
         convert_date_to_ascii_array("Espressif", send_data, &send_data_len);
-        pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS);
+        pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS, mode);
         break;
       }
     case CMD_REQUEST_DEVICE_NAME: {
         uint8_t send_data[16];
         uint8_t send_data_len = 0;
         convert_date_to_ascii_array("ESP32", send_data, &send_data_len);
-        pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS);
+        pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS, mode);
         break;
       }
     case CMD_REQUEST_CURRENT_STATE: {
         uint8_t send_data[] = {0x0F};
-        pkt.crc_send = create_crc_data(pkt, send_data, 1, ERR_SUCCESS);
+        pkt.crc_send = create_crc_data(pkt, send_data, 1, ERR_SUCCESS, mode);
         break;
       }
     case CMD_REQUEST_IMU: {
-        unsigned long now = millis();
-        float dt = (now - prev_time) / 1000.0f;
-        prev_time = now;
-        // Update RPY values from IMU
-        uint8_t status = updateRPYFromIMU(dt, &roll, &pitch, &yaw);
-        uint8_t send_data[16];
-        memcpy(send_data, &roll, sizeof(float));
-        memcpy(send_data + 4, &pitch, sizeof(float));
-        memcpy(send_data + 8, &yaw, sizeof(float));
-        memcpy(send_data + 12, &temp, sizeof(float));
-
-        pkt.crc_send = create_crc_data(pkt, send_data, 16, status);
+        if (mode == 0){
+          unsigned long now = millis();
+          float dt = (now - prev_time) / 1000.0f;
+          prev_time = now;
+          // Update RPY values from IMU
+          uint8_t status = updateRPYFromIMU(dt, &roll, &pitch, &yaw);
+          uint8_t send_data[16];
+          memcpy(send_data, &roll, sizeof(float));
+          memcpy(send_data + 4, &pitch, sizeof(float));
+          memcpy(send_data + 8, &yaw, sizeof(float));
+          memcpy(send_data + 12, &temp, sizeof(float));
+  
+          pkt.crc_send = create_crc_data(pkt, send_data, 16, status, mode); 
+        }
+        else if(mode == 1){
+          float usage = getCPUUsage();
+          uint8_t send_data[4];
+          encodeCPUUsage(usage, send_data);
+          pkt.crc_send = create_crc_data(pkt, send_data, 4, ERR_SUCCESS, mode); 
+        }
         break;
       }
     case CMD_REQUEST_CARRIPLATION_STATUS: {
@@ -207,7 +224,7 @@ void command_handler(ReceivedPacket & pkt)
         }
 
         uint8_t send_data[] = {0x00};
-        pkt.crc_send = create_crc_data(pkt, send_data, 1, status);
+        pkt.crc_send = create_crc_data(pkt, send_data, 1, status, mode);
         break;
       }
     case CMD_REQUEST_CARRIPLATION_EXECUSION: {
@@ -223,7 +240,7 @@ void command_handler(ReceivedPacket & pkt)
         }
 
         uint8_t send_data[] = {0x00};
-        pkt.crc_send = create_crc_data(pkt, send_data, 1, status);
+        pkt.crc_send = create_crc_data(pkt, send_data, 1, status, mode);
         break;
       }
     default: {

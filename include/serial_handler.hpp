@@ -12,6 +12,7 @@ extern "C" {
 #include "crc8.h"
 #include "command_handler.hpp"
 #include "packet_handler.h"
+#include "cpu_usage_handler.hpp"
 
 
 bool serial_read(ReceivedPacket & pkt)
@@ -56,21 +57,21 @@ bool serial_read(ReceivedPacket & pkt)
   return pkt.footer == '\r';
 }
 
-bool serial_write(ReceivedPacket & pkt)
+bool serial_write(ReceivedPacket & pkt, uint8_t mode)
 {
-  command_handler(pkt);
+  command_handler(pkt, mode);
   char send_packet[256] = {};
   uint8_t send_packet_len = 0;
-  if(!create_send_packet(pkt, send_packet)) {return false;};
+  if(!create_send_packet(pkt, send_packet, mode)) {return false;};
   Serial.write(send_packet, sizeof(send_packet));  // Send data to serial
 
   // Debug print sent data to M5 LCD
-  M5.Lcd.printf("=== SEND ===\n");
-  M5.Lcd.printf("send_data: ");
-  for (int i = 0; i < pkt.send_data_len + 5; ++i) {
-    M5.Lcd.printf("%02X ", send_packet[i]);
-  }
-  M5.Lcd.println();
+  // M5.Lcd.printf("=== SEND ===\n");
+  // M5.Lcd.printf("send_data: ");
+  // for (int i = 0; i < pkt.send_data_len + 5; ++i) {
+  //   M5.Lcd.printf("%02X ", send_packet[i]);
+  // }
+  // M5.Lcd.println();
 }
 
 #ifdef __cplusplus
