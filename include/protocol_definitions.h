@@ -1,9 +1,11 @@
-#ifndef PROTOCOL_DEFINITIONS_HPP
-#define PROTOCOL_DEFINITIONS_HPP
+#ifndef PROTOCOL_DEFINITIONS_H
+#define PROTOCOL_DEFINITIONS_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stdint.h>
 
 
 struct ReceivedPacket
@@ -23,7 +25,6 @@ struct ReceivedPacket
   uint32_t start_tick;
   uint32_t elapsed_tick;
 };
-
 
 #define OWN_ID 0x01
 #define VERSION 0x01
@@ -59,4 +60,4 @@ struct ReceivedPacket
 }
 #endif
 
-#endif // PROTOCOL_DEFINITIONS_HPP
+#endif // PROTOCOL_DEFINITIONS_H

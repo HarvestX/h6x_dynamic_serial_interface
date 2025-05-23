@@ -1,14 +1,9 @@
 #ifndef SERIAL_HANDLER_HPP
 #define SERIAL_HANDLER_HPP
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#pragma once
 #include <M5Core2.h>
 #include <string.h>
-#include "protocol_definitions.hpp"
+#include "protocol_definitions.h"
 #include "crc8.h"
 #include "command_handler.hpp"
 #include "packet_handler.h"
@@ -73,9 +68,5 @@ bool serial_write(ReceivedPacket & pkt, uint8_t mode)
   // }
   // M5.Lcd.println();
 }
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // SERIAL_HANDLER_HPP

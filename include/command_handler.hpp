@@ -1,18 +1,12 @@
 #ifndef COMMAND_HANDLER_HPP
 #define COMMAND_HANDLER_HPP
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#pragma once
-#include <M5Core2.h>
 #include <string.h>
 #include <stdint.h>
-#include <cmath>
-#include "protocol_definitions.hpp"
+#include <math.h>
+#include "protocol_definitions.h"
 #include "crc8.h"
-#include "imu_filter.hpp"
+#include "imu_filter.h"
 #include "cpu_usage_handler.hpp"
 
 #define CALIBRATION_TIME 200  // Number of cycles for gyro calibration
@@ -248,9 +242,5 @@ void command_handler(ReceivedPacket & pkt, uint8_t mode)
       }
   }
 }
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

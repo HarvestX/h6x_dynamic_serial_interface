@@ -5,10 +5,8 @@
 extern "C" {
 #endif
 
-#pragma once
-#include <M5Core2.h>
 #include <string.h>
-#include "protocol_definitions.hpp"
+#include "protocol_definitions.h"
 #include "crc8.h"
 #include "command_handler.hpp"
 
