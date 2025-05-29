@@ -84,10 +84,18 @@ def receive_response_thread(ser):
         response_2 = ser.read(2)
         if len(response_2) != 2:
             continue
-
         crc_recv, footer = response_2
 
-        print("\n=== Received Packet ===")
+        global print_color
+        if print_color == 1:
+            print(f"\n{RED}=== Recieved data from M5Stack ==={RESET}")
+        elif print_color == 0:
+            print(f"\n{GREEN}=== Recieved data from M5Stack ==={RESET}")
+        else:
+            print("\n=== Recieved data from M5Stack ===")
+
+        
+
         print(f"Own ID      : 0x{own_id:02X}")
         print(f"Command     : 0x{command:02X}")
         print(f"Status      : 0x{status:02X}")
@@ -98,7 +106,6 @@ def receive_response_thread(ser):
 
         # PRINT_COLOR
         if command == CMD_INTERNAL_LED_ON_OFF:
-            global print_color
             if print_color == 0:
                 print(f"\n[INFO] {RED}LED Color: Red{RESET}")
                 print_color = 1

@@ -30,7 +30,7 @@ bool serial_read(ReceivedPacket & pkt)
 
     if (byte == '\r') break;  // footer 到達
   }
-  packet_division(pkt, recv_packet);
+  packet_division(pkt, recv_packet, read_data_len);
 
   // Check CRC
   if (!check_crc(pkt)) {
@@ -59,11 +59,11 @@ bool serial_read(ReceivedPacket & pkt)
   return pkt.footer == '\r';
 }
 
+
 bool serial_write(ReceivedPacket & pkt, uint8_t mode)
 {
   command_handler(pkt, mode);
   char send_packet[256] = {};
-  uint8_t send_packet_len = 0;
   if(!create_send_packet(pkt, send_packet, mode)) {return false;};
   Serial.write(send_packet, sizeof(send_packet));  // Send data to serial
 

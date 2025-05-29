@@ -11,13 +11,16 @@ extern "C" {
 #include "command_handler.hpp"
 
 
-bool packet_division(ReceivedPacket & pkt, char * recv_packet){
+bool packet_division(ReceivedPacket & pkt, char * recv_packet, int recv_len){
   // Parse the received packet into the ReceivedPacket structure
   pkt.header = recv_packet[0];  // Header
   pkt.target_id = recv_packet[1];  // Target ID
   pkt.command = recv_packet[2];  // Command
   pkt.length = recv_packet[3];  // Length of payload
 
+  if (recv_len < pkt.length + 6 || pkt.length > 245) {
+    return false; // Invalid length or insufficient data
+  }
   // Read payload data
   for (int i = 0; i < pkt.length; i++) {
     pkt.recv_data[i] = recv_packet[i + 4];  // Payload data starts from index 4

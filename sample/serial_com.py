@@ -155,7 +155,7 @@ def receive_response_thread(ser):
         # REQUEST CURRENT STATE
         if command == CMD_REQUEST_CURRENT_STATE:
             print("\n[INFO] Current State Request")
-            print(f"  State: {state}")
+            print(f"  State: {data}")
 
         
 

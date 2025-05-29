@@ -67,11 +67,11 @@ void big_endian(uint32_t value, uint8_t * out_array, uint8_t * out_len)
 }
 
 // Convert date string (e.g., "2025/04/25") to ASCII byte array
-void convert_date_to_ascii_array(const char * date_str, uint8_t * ascii_array, uint8_t * length)
+void convert_date_to_ascii_array(const char * date_str, uint8_t * ascii_array, uint8_t * length, uint8_t max_array_size)
 {
   if (!date_str || !ascii_array || !length) {return;}
 
-  uint8_t len = strlen(date_str);
+  uint8_t len = strnlen(date_str, max_array_size);
   for (uint8_t i = 0; i < len; ++i) {
     ascii_array[i] = static_cast<uint8_t>(date_str[i]);
   }
@@ -102,7 +102,7 @@ uint8_t create_crc_data(ReceivedPacket & pkt, const uint8_t * data, uint8_t len,
   pkt.status = status;
   memcpy(pkt.send_data, data, len);
 
-  uint8_t response_len = (mode == 1) ? 4 : 3;
+  const uint8_t response_len = (mode == 1) ? 4 : 3;
   uint8_t response[response_len];
   response[0] = OWN_ID;
   if (mode == 1) {
@@ -161,21 +161,27 @@ void command_handler(ReceivedPacket & pkt, uint8_t mode)
     case CMD_REQUEST_FIRMWARE_WRITE_DATE: {
         uint8_t send_data[16];
         uint8_t send_data_len = 0;
-        convert_date_to_ascii_array("2025/04/25", send_data, &send_data_len);
+        char* message = "2025/04/25";
+        uint8_t message_len = strnlen(message, sizeof(send_data));
+        convert_date_to_ascii_array(message, send_data, &send_data_len, message_len);
         pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS, mode);
         break;
       }
     case CMD_REQUEST_DEVICE_VENDOR: {
         uint8_t send_data[16];
         uint8_t send_data_len = 0;
-        convert_date_to_ascii_array("Espressif", send_data, &send_data_len);
+        char* message = "Espressif";
+        uint8_t message_len = strnlen(message, sizeof(send_data));
+        convert_date_to_ascii_array(message, send_data, &send_data_len, message_len);
         pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS, mode);
         break;
       }
     case CMD_REQUEST_DEVICE_NAME: {
         uint8_t send_data[16];
         uint8_t send_data_len = 0;
-        convert_date_to_ascii_array("ESP32", send_data, &send_data_len);
+        char* message = "ESP32";
+        uint8_t message_len = strnlen(message, sizeof(send_data));
+        convert_date_to_ascii_array(message, send_data, &send_data_len, message_len);
         pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS, mode);
         break;
       }
