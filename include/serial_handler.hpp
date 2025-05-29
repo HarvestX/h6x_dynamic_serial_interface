@@ -32,6 +32,13 @@ bool serial_read(ReceivedPacket & pkt)
   }
   packet_division(pkt, recv_packet);
 
+  // Check CRC
+  if (!check_crc(pkt)) {
+    M5.Lcd.setCursor(0, 0);
+    M5.Lcd.printf("CRC error\n");
+    return false;  // CRC check failed
+  }
+
   // Debug print received data to M5 LCD
   M5.Lcd.setCursor(0, 0);
   M5.Lcd.printf("=== RECV ===\n");

@@ -5,9 +5,11 @@
 #include "serial_handler.hpp"
 #include "cpu_usage_handler.hpp"
 
-ReceivedPacket pkt;
+ReceivedPacket pkt_send;
+ReceivedPacket pkt_recv;
 
 #define MODE 1
+#define LENGTH 7
 
 const char* options[] = {
   "00: Ping", "01: Change print color (red/green)", "02: Reboot device",
@@ -49,14 +51,14 @@ void drawMenu(int highlightIndex = -1) {
 }
 
 void sendSelectedCommand() {
-  memset(&pkt, 0, sizeof(pkt));
-  pkt.command = return_values[selected_index];
-  if (pkt.command == 0x03) {
-    pkt.send_data[0] = (selected_index == 3) ? 0x05 : 0x01;
-    pkt.send_data_len = 1;
+  memset(&pkt_send, 0, sizeof(pkt_send));
+  pkt_send.command = return_values[selected_index];
+  if (pkt_send.command == 0x03) {
+    pkt_send.send_data[0] = (selected_index == 3) ? 0x05 : 0x01;
+    pkt_send.send_data_len = 1;
   }
 
-  if (!serial_write(pkt, MODE)) {
+  if (!serial_write(pkt_send, MODE)) {
     M5.Lcd.fillRect(0, 260, 320, 40, BLACK);
     M5.Lcd.setCursor(20, 260);
     M5.Lcd.setTextColor(RED);
@@ -81,7 +83,6 @@ void setup() {
 
 void loop() {
   M5.update();
-
   if (M5.BtnA.wasPressed()) {
     if (selected_index > 0) {
       selected_index--;
@@ -104,6 +105,14 @@ void loop() {
 
   if (M5.BtnB.wasPressed()) {
     sendSelectedCommand();
+  }
+
+  if (Serial.available() >= LENGTH) {
+    if (!serial_read(pkt_recv)) {
+      M5.Lcd.setCursor(0, 0);
+      M5.Lcd.printf("Failed read\n");
+      return;
+    }
   }
 
   delay(20);

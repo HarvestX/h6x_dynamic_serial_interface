@@ -23,9 +23,9 @@ CMD_REQUEST_DEVICE_VENDOR     = 0x13
 CMD_REQUEST_DEVICE_NAME       = 0x14
 CMD_REQUEST_CURRENT_STATE     = 0x15
 
-command = CMD_PING
-
+global command
 global print_color
+data_bytes = b''
 print_color = 0
 
 # === COLOR DEFINITIONS ===
@@ -53,8 +53,23 @@ def hex_to_ascii(hex_str):
         print(f"変換エラー: {e}")
         return None
 
+def send_packet(ser):
+    target_id = 0x01
+    global data_bytes
+    global command
+    payload = b''
+    crc_input = bytes([target_id, command, len(data_bytes)]) + data_bytes + payload
+    crc = crc8_dallas_maxim(crc_input)
+    packet = b'#' + bytes([target_id, command, len(data_bytes)]) + data_bytes + bytes([crc]) + b'\r'
+    ser.write(packet)
+
+    print("\n=== Sent Packet ===")
+    print(f"Command     : 0x{command:02X}")
+    print(f"Packet (hex): {packet.hex()}")
+
 def receive_response_thread(ser):
     while True:
+        global data_bytes, command
         head = ser.read(1)
         if head != b'$':
             continue
@@ -65,6 +80,7 @@ def receive_response_thread(ser):
 
         own_id, command, status, length = response
         data = ser.read(length)
+        data_bytes = data
         response_2 = ser.read(2)
         if len(response_2) != 2:
             continue
@@ -168,6 +184,9 @@ def receive_response_thread(ser):
             print(f"  Failure: CRC mismatch")
             print(f"    Calculated: 0x{crc_calc:02X}")
             print(f"    Received  : 0x{crc_recv:02X}")
+
+        # Send a packet back to the device
+        send_packet(ser)
 
 def main():
     global command
