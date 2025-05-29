@@ -6,12 +6,12 @@ extern "C" {
 #endif
 
 #include <string.h>
-#include "protocol_definitions.h"
+#include "protocol_definitions_base.h"
 #include "crc8.h"
 #include "command_handler.hpp"
 
 
-bool packet_division(ReceivedPacket & pkt, char * recv_packet, int recv_len){
+bool packet_division(ReceivedPacket & pkt, char * recv_packet, const int recv_len){
   // Parse the received packet into the ReceivedPacket structure
   pkt.header = recv_packet[0];  // Header
   pkt.target_id = recv_packet[1];  // Target ID
@@ -47,10 +47,10 @@ bool check_crc(ReceivedPacket & pkt)
   return crc_calc == pkt.crc_recv;
 }
 
-bool create_send_packet(ReceivedPacket & pkt, char* send_packet, uint8_t mode)
+bool create_send_packet(ReceivedPacket & pkt, const uint8_t mode, const uint8_t id, char* send_packet)
 {
   send_packet[0] = '$';                        // Header
-  send_packet[1] = OWN_ID;                    // Source ID
+  send_packet[1] = id;                    // Source ID
   if (mode == 1){
     send_packet[2] = pkt.command; // Command
   }
