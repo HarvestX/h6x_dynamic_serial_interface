@@ -1,5 +1,5 @@
-#ifndef CRC8_HPP
-#define CRC8_HPP
+#ifndef CRC8_H
+#define CRC8_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,4 +37,4 @@ inline uint8_t crc8_calculate(const uint8_t * input, uint16_t len)
 }
 #endif
 
-#endif // CRC8_HPP
+#endif // CRC8_H
