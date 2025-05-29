@@ -29,7 +29,7 @@ void loop()
       M5.Lcd.printf("Failed read\n");
       return;
     }
-    if (!serial_write(pkt, MODE)) {
+    if (!serial_write(pkt, OWN_ID, MODE)) {
       M5.Lcd.setCursor(0, 0);
       M5.Lcd.printf("Failed write\n");
       return;

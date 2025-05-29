@@ -18,7 +18,7 @@ float offsetX = 0, offsetY = 0, offsetZ = 0;
 unsigned long prev_time = millis();  // Timestamp for delta time calculation
 
 // Low-pass filter to smooth values
-float lowPassFilter(float current_value, float previous_value, float alpha)
+float lowPassFilter(const float current_value, const float previous_value, const float alpha)
 {
   return alpha * current_value + (1.0f - alpha) * previous_value;
 }
@@ -49,7 +49,7 @@ uint8_t updateRPYFromIMU(float dt, float * roll, float * pitch, float * yaw)
 }
 
 // Convert uint32_t to big-endian byte array
-void big_endian(uint32_t value, uint8_t * out_array, uint8_t * out_len)
+void big_endian(const uint32_t value, uint8_t * out_array, uint8_t * out_len)
 {
   int byte_count = 0;
   for (int shift = 24; shift >= 0; shift -= 8) {
@@ -67,7 +67,7 @@ void big_endian(uint32_t value, uint8_t * out_array, uint8_t * out_len)
 }
 
 // Convert date string (e.g., "2025/04/25") to ASCII byte array
-void convert_date_to_ascii_array(const char * date_str, uint8_t * ascii_array, uint8_t * length, uint8_t max_array_size)
+void convert_date_to_ascii_array(const char * date_str, uint8_t * ascii_array, uint8_t * length, const uint8_t max_array_size)
 {
   if (!date_str || !ascii_array || !length) {return;}
 
@@ -81,8 +81,8 @@ void convert_date_to_ascii_array(const char * date_str, uint8_t * ascii_array, u
 
 // Concatenate two byte arrays into one result array
 void concat_arrays(
-  const uint8_t * a, uint8_t len_a,
-  const uint8_t * b, uint8_t len_b,
+  const uint8_t * a, const uint8_t len_a,
+  const uint8_t * b, const uint8_t len_b,
   uint8_t * result, uint8_t * result_len)
 {
   if (len_a + len_b > 245) {
@@ -96,7 +96,7 @@ void concat_arrays(
 }
 
 // Create CRC-8 checksum based on status and payload
-uint8_t create_crc_data(ReceivedPacket & pkt, const uint8_t * data, uint8_t len, uint8_t status, uint8_t mode)
+uint8_t create_crc_data(ReceivedPacket & pkt, const uint8_t * data, const uint8_t len, const uint8_t status, const uint8_t mode)
 {
   pkt.send_data_len = len;
   pkt.status = status;
@@ -161,7 +161,7 @@ void command_handler(ReceivedPacket & pkt, uint8_t mode)
     case CMD_REQUEST_FIRMWARE_WRITE_DATE: {
         uint8_t send_data[16];
         uint8_t send_data_len = 0;
-        char* message = "2025/04/25";
+        const char* message = "2025/04/25";
         uint8_t message_len = strnlen(message, sizeof(send_data));
         convert_date_to_ascii_array(message, send_data, &send_data_len, message_len);
         pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS, mode);
@@ -170,7 +170,7 @@ void command_handler(ReceivedPacket & pkt, uint8_t mode)
     case CMD_REQUEST_DEVICE_VENDOR: {
         uint8_t send_data[16];
         uint8_t send_data_len = 0;
-        char* message = "Espressif";
+        const char* message = "Espressif";
         uint8_t message_len = strnlen(message, sizeof(send_data));
         convert_date_to_ascii_array(message, send_data, &send_data_len, message_len);
         pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS, mode);
@@ -179,7 +179,7 @@ void command_handler(ReceivedPacket & pkt, uint8_t mode)
     case CMD_REQUEST_DEVICE_NAME: {
         uint8_t send_data[16];
         uint8_t send_data_len = 0;
-        char* message = "ESP32";
+        const char* message = "ESP32";
         uint8_t message_len = strnlen(message, sizeof(send_data));
         convert_date_to_ascii_array(message, send_data, &send_data_len, message_len);
         pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS, mode);

@@ -58,7 +58,7 @@ void sendSelectedCommand() {
     pkt_send.send_data_len = 1;
   }
 
-  if (!serial_write(pkt_send, MODE)) {
+  if (!serial_write(pkt_send, OWN_ID, MODE)) {
     M5.Lcd.fillRect(0, 260, 320, 40, BLACK);
     M5.Lcd.setCursor(20, 260);
     M5.Lcd.setTextColor(RED);

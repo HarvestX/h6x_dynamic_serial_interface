@@ -60,11 +60,11 @@ bool serial_read(ReceivedPacket & pkt)
 }
 
 
-bool serial_write(ReceivedPacket & pkt, uint8_t mode)
+bool serial_write(ReceivedPacket & pkt, const uint8_t id, const uint8_t mode)
 {
   command_handler(pkt, mode);
   char send_packet[256] = {};
-  if(!create_send_packet(pkt, send_packet, mode)) {return false;};
+  if(!create_send_packet(pkt, id, mode, send_packet)) {return false;};
   Serial.write(send_packet, sizeof(send_packet));  // Send data to serial
 
   // Debug print sent data to M5 LCD
