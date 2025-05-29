@@ -1,0 +1,110 @@
+#include <Arduino.h>
+#include <M5Core2.h>
+#include "packet_handler.h"
+#include "command_handler.hpp"
+#include "serial_handler.hpp"
+#include "cpu_usage_handler.hpp"
+
+ReceivedPacket pkt;
+
+#define MODE 1
+
+const char* options[] = {
+  "00: Ping", "01: Change print color (red/green)", "02: Reboot device",
+  "03: Request general status", "03: Request firmware version",
+  "10: Request device tick", "12: Request firmware write date",
+  "13: Request device vendor", "14: Request device name",
+  "15: Request current state", "20: Display CPU usage"
+};
+
+const uint8_t return_values[] = {
+  0x00, 0x01, 0x02, 0x03, 0x03, 0x10, 0x12, 0x13, 0x14, 0x15, 0x20
+};
+
+const int num_options = sizeof(options) / sizeof(options[0]);
+const int visible_rows = 6;
+const int row_height = 40;
+
+int selected_index = 0;
+int menu_offset = 0;
+
+void drawMenu(int highlightIndex = -1) {
+  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.setTextSize(2);
+
+  for (int i = 0; i < visible_rows; i++) {
+    int option_index = i + menu_offset;
+    if (option_index >= num_options) break;
+
+    if (option_index == highlightIndex) {
+      M5.Lcd.setTextColor(BLACK, GREEN);
+    } else {
+      M5.Lcd.setTextColor(WHITE, BLACK);
+    }
+
+    M5.Lcd.fillRect(20, 30 + i * row_height, 280, row_height, (option_index == highlightIndex) ? GREEN : BLACK);
+    M5.Lcd.setCursor(30, 30 + i * row_height + 8);
+    M5.Lcd.println(options[option_index]);
+  }
+}
+
+void sendSelectedCommand() {
+  memset(&pkt, 0, sizeof(pkt));
+  pkt.command = return_values[selected_index];
+  if (pkt.command == 0x03) {
+    pkt.send_data[0] = (selected_index == 3) ? 0x05 : 0x01;
+    pkt.send_data_len = 1;
+  }
+
+  if (!serial_write(pkt, MODE)) {
+    M5.Lcd.fillRect(0, 260, 320, 40, BLACK);
+    M5.Lcd.setCursor(20, 260);
+    M5.Lcd.setTextColor(RED);
+    M5.Lcd.printf("Failed to send");
+  } else {
+    M5.Lcd.fillRect(0, 260, 320, 40, BLACK);
+    M5.Lcd.setCursor(20, 260);
+    M5.Lcd.setTextColor(YELLOW);
+    M5.Lcd.printf("Sent: %s → 0x%02X", options[selected_index], return_values[selected_index]);
+  }
+}
+
+void setup() {
+  M5.begin();
+  M5.Lcd.setTextSize(2);
+  M5.Lcd.setTextColor(WHITE, BLACK);
+  M5.Lcd.fillScreen(BLACK);
+  Serial.begin(115200);
+  startCPUUsageMonitor();
+  drawMenu(selected_index);
+}
+
+void loop() {
+  M5.update();
+
+  if (M5.BtnA.wasPressed()) {
+    if (selected_index > 0) {
+      selected_index--;
+      if (selected_index < menu_offset) {
+        menu_offset--;
+      }
+      drawMenu(selected_index);
+    }
+  }
+
+  if (M5.BtnC.wasPressed()) {
+    if (selected_index < num_options - 1) {
+      selected_index++;
+      if (selected_index >= menu_offset + visible_rows) {
+        menu_offset++;
+      }
+      drawMenu(selected_index);
+    }
+  }
+
+  if (M5.BtnB.wasPressed()) {
+    sendSelectedCommand();
+  }
+
+  delay(20);
+}

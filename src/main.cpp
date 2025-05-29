@@ -1,59 +1,39 @@
 #include <Arduino.h>
 #include <M5Core2.h>
-#include "imu_filter.hpp"
-#include "data_logger.hpp"
+#include "packet_handler.h"
+#include "command_handler.hpp"
+#include "serial_handler.hpp"
 
-#define CSV_FILENAME "/data/imu_data.csv"
-#define BUFFER_SIZE 50
+ReceivedPacket pkt;
 
-std::vector<String> dataBuffer;
-float offsetX = 0, offsetY = 0, offsetZ = 0;
+#define MODE 0
+#define LENGTH 7
 
-void setup() {
-    M5.begin();
-    M5.IMU.Init();
-    M5.Lcd.fillScreen(BLACK);
-    M5.Lcd.setTextColor(GREEN, BLACK);
-    M5.Lcd.setTextSize(2);
-    Serial.begin(115200);
-
-    if (!initFileSystem(CSV_FILENAME)) {
-        while (1);
-    }
-
-    calibrateIMU(offsetX, offsetY, offsetZ);
+void setup()
+{
+  M5.begin();
+  M5.IMU.Init();
+  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.setTextColor(GREEN, BLACK);
+  M5.Lcd.setTextSize(2);
+  Serial.begin(115200);
+  unsigned long start_tick = millis();
 }
 
-void loop() {
-    float accX, accY, accZ, gyroX, gyroY, gyroZ, pitch, roll, yaw, temp;
-
-    M5.IMU.getGyroData(&gyroX, &gyroY, &gyroZ);
-    M5.IMU.getAccelData(&accX, &accY, &accZ);
-    M5.IMU.getTempData(&temp);
-
-    updateOrientation(gyroX, gyroY, gyroZ, accX, accY, accZ,
-                      pitch, roll, yaw, offsetX, offsetY, offsetZ);
-
-    M5.Lcd.setCursor(0, 20);
-    M5.Lcd.printf("gyro: %6.2f %6.2f %6.2f\n", gyroX, gyroY, gyroZ);
-    M5.Lcd.setCursor(0, 70);
-    M5.Lcd.printf("acc : %5.2f %5.2f %5.2f\n", accX, accY, accZ);
-    M5.Lcd.setCursor(0, 120);
-    M5.Lcd.printf("angle: %5.2f %5.2f %5.2f\n", pitch, roll, yaw);
-    M5.Lcd.setCursor(0, 175);
-    M5.Lcd.printf("Temp : %.2f C", temp);
-
-    String data = String(millis()) + "," +
-                  String(accX, 6) + "," + String(accY, 6) + "," + String(accZ, 6) + "," +
-                  String(gyroX, 6) + "," + String(gyroY, 6) + "," + String(gyroZ, 6) + "," +
-                  String(pitch, 6) + "," + String(roll, 6) + "," + String(yaw, 6) + "," +
-                  String(temp, 2);
-    dataBuffer.push_back(data);
-
-    if (dataBuffer.size() >= BUFFER_SIZE) {
-        writeDataBuffered(dataBuffer, CSV_FILENAME);
-        dataBuffer.clear();
+void loop()
+{
+  memset(&pkt, 0, sizeof(pkt));
+  if (Serial.available() >= LENGTH) {
+    if (!serial_read(pkt)) {
+      M5.Lcd.setCursor(0, 0);
+      M5.Lcd.printf("Failed read\n");
+      return;
     }
-
-    delay(10);
+    if (!serial_write(pkt, MODE)) {
+      M5.Lcd.setCursor(0, 0);
+      M5.Lcd.printf("Failed write\n");
+      return;
+    }
+  }
+  delay(10);   // ~100Hz loop
 }
