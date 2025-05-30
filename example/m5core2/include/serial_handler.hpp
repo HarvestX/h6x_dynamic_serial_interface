@@ -22,15 +22,22 @@ bool serial_read(ReceivedPacket & pkt)
   int max_len = sizeof(recv_packet);
 
   while (read_data_len < max_len) {
-    while (!Serial.available());  // データが来るまで待つ
-    int byte = Serial.read();  // Serial.read() は int型（-1を返す可能性がある）
+    while (!Serial.available());
+    int byte = Serial.read();
     if (byte == -1) continue;
 
     recv_packet[read_data_len++] = static_cast<char>(byte);
 
-    if (byte == '\r') break;  // footer 到達
+    if (byte == '\r') break;
   }
-  packet_division(pkt, recv_packet);
+  packet_division(pkt, recv_packet, read_data_len);
+
+  // Check CRC
+  if (!check_crc(pkt)) {
+    M5.Lcd.setCursor(0, 0);
+    M5.Lcd.printf("CRC error\n");
+    return false;  // CRC check failed
+  }
 
   // Debug print received data to M5 LCD
   M5.Lcd.setCursor(0, 0);
@@ -54,19 +61,19 @@ bool serial_read(ReceivedPacket & pkt)
 
 bool serial_write(ReceivedPacket & pkt, uint8_t mode)
 {
+  M5.Lcd.setCursor(0, 200);
   command_handler(pkt, mode);
   char send_packet[256] = {};
-  uint8_t send_packet_len = 0;
   if(!create_send_packet(pkt, send_packet, mode)) {return false;};
   Serial.write(send_packet, sizeof(send_packet));  // Send data to serial
 
   // Debug print sent data to M5 LCD
-  // M5.Lcd.printf("=== SEND ===\n");
-  // M5.Lcd.printf("send_data: ");
-  // for (int i = 0; i < pkt.send_data_len + 5; ++i) {
-  //   M5.Lcd.printf("%02X ", send_packet[i]);
-  // }
-  // M5.Lcd.println();
+  M5.Lcd.printf("=== SEND ===\n");
+  M5.Lcd.printf("send_data: ");
+  for (int i = 0; i < pkt.send_data_len + 5; ++i) {
+    M5.Lcd.printf("%02X ", send_packet[i]);
+  }
+  M5.Lcd.println();
 }
 
 #endif // SERIAL_HANDLER_HPP

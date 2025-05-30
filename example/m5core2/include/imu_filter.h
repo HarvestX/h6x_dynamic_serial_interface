@@ -2,6 +2,7 @@
 #define IMU_FILTER_H
 
 #include <stdint.h>
+#include <math.h>
 
 
 static float sumX = 0, sumY = 0, sumZ = 0;
