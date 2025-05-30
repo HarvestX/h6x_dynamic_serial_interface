@@ -60,20 +60,21 @@ bool serial_read(ReceivedPacket & pkt)
 }
 
 
-bool serial_write(ReceivedPacket & pkt, const uint8_t id, const uint8_t mode)
+bool serial_write(ReceivedPacket & pkt, uint8_t mode)
 {
+  M5.Lcd.setCursor(0, 200);
   command_handler(pkt, mode);
   char send_packet[256] = {};
-  if(!create_send_packet(pkt, id, mode, send_packet)) {return false;};
+  if(!create_send_packet(pkt, send_packet, mode)) {return false;};
   Serial.write(send_packet, sizeof(send_packet));  // Send data to serial
 
   // Debug print sent data to M5 LCD
-  // M5.Lcd.printf("=== SEND ===\n");
-  // M5.Lcd.printf("send_data: ");
-  // for (int i = 0; i < pkt.send_data_len + 5; ++i) {
-  //   M5.Lcd.printf("%02X ", send_packet[i]);
-  // }
-  // M5.Lcd.println();
+  M5.Lcd.printf("=== SEND ===\n");
+  M5.Lcd.printf("send_data: ");
+  for (int i = 0; i < pkt.send_data_len + 5; ++i) {
+    M5.Lcd.printf("%02X ", send_packet[i]);
+  }
+  M5.Lcd.println();
 }
 
 #endif // SERIAL_HANDLER_HPP
