@@ -22,17 +22,22 @@ CMD_REQUEST_FIRMWARE_WRITE_DATE = 0x12
 CMD_REQUEST_DEVICE_VENDOR     = 0x13
 CMD_REQUEST_DEVICE_NAME       = 0x14
 CMD_REQUEST_CURRENT_STATE     = 0x15
+CMD_REQUEST_CPU_USAGE         = 0x20
 CMD_REQUEST_OUTPUT_RANDOM_NUMBER = 0xFA #NEW
 
+# === COLOR DEFINITIONS ===
+RED_COMMAND = 1
+GREEN_COMMAND = 0
+RED = "\033[31m"
+GREEN = "\033[32m"
+RESET = "\033[0m"
+
+# === Global Variables ===
 global command
 global print_color
 data_bytes = b''
 print_color = 0
 
-# === COLOR DEFINITIONS ===
-RED = "\033[31m"
-GREEN = "\033[32m"
-RESET = "\033[0m"
 
 def crc8_dallas_maxim(data: bytes) -> int:
     crc = 0x00
@@ -51,7 +56,7 @@ def hex_to_ascii(hex_str):
         chars = [chr(int(hex_str[i:i+2], 16)) for i in range(0, len(hex_str), 2)]
         return ''.join(chars)
     except ValueError as e:
-        print(f"変換エラー: {e}")
+        print(f"ascii error: {e}")
         return None
 
 def send_packet(ser):
@@ -88,9 +93,9 @@ def receive_response_thread(ser):
         crc_recv, footer = response_2
 
         global print_color
-        if print_color == 1:
+        if print_color == RED_COMMAND:
             print(f"\n{RED}=== Recieved data from M5Stack ==={RESET}")
-        elif print_color == 0:
+        elif print_color == GREEN_COMMAND:
             print(f"\n{GREEN}=== Recieved data from M5Stack ==={RESET}")
         else:
             print("\n=== Recieved data from M5Stack ===")
@@ -107,12 +112,12 @@ def receive_response_thread(ser):
 
         # PRINT_COLOR
         if command == CMD_INTERNAL_LED_ON_OFF:
-            if print_color == 0:
-                print(f"\n[INFO] {RED}LED Color: Red{RESET}")
-                print_color = 1
-            elif print_color == 1:
-                print(f"\n[INFO] {GREEN}LED Color: Green{RESET}")
-                print_color = 0
+            if print_color == GREEN_COMMAND:
+                print(f"\n[INFO] {RED}Change LED Color: Red{RESET}")
+                print_color = RED_COMMAND
+            elif print_color == RED_COMMAND:
+                print(f"\n[INFO] {GREEN}Change LED Color: Green{RESET}")
+                print_color = GREEN_COMMAND
             else:
                 print(f"\n[INFO] LED Color: Unknown")
 
@@ -174,9 +179,9 @@ def receive_response_thread(ser):
         if command == CMD_REQUEST_CURRENT_STATE:
             print("\n[INFO] Current State Request")
             print(f"  State: {data.hex()}")
-
-        if command == 0x20:
-            # CPU Usage
+        
+        # REQUEST CPU Usage
+        if command == CMD_REQUEST_CPU_USAGE:
             print("\n[INFO] CPU Usage")
             if len(data) != 4:
                 print("  [ERROR] Invalid data length for CPU usage.")

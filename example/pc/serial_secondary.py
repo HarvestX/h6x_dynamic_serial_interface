@@ -22,7 +22,9 @@ CMD_REQUEST_FIRMWARE_WRITE_DATE = 0x12
 CMD_REQUEST_DEVICE_VENDOR     = 0x13
 CMD_REQUEST_DEVICE_NAME       = 0x14
 CMD_REQUEST_CURRENT_STATE     = 0x15
-CMD_REQUEST_IMU_SENSOR_DATA   = 0x20      
+CMD_REQUEST_IMU_SENSOR_DATA   = 0x20
+CMD_REQUEST_CARRIPLATION_STATUS  = 0x21   
+CMD_REQUEST_CARRIPLATION_EXECUSION = 0x96   
 CMD_REQUEST_OUTPUT_RANDOM_NUMBER = 0xFA #NEW           
 
 command = CMD_PING
@@ -44,7 +46,7 @@ def hex_to_ascii(hex_str):
         chars = [chr(int(hex_str[i:i+2], 16)) for i in range(0, len(hex_str), 2)]
         return ''.join(chars)
     except ValueError as e:
-        print(f"変換エラー: {e}")
+        print(f"ascii error: {e}")
         return None
 
 def command_input_thread():
@@ -101,7 +103,7 @@ def receive_response_thread(ser):
         print(f"CRC (Recv)  : 0x{crc_recv:02X}")
         print(f"Footer      : 0x{footer:02X}")
 
-        # PINq
+        # PING
         if command == CMD_PING:
             print("\n[INFO] Ping Response")
             print(f"  PING: {data}")
@@ -168,13 +170,30 @@ def receive_response_thread(ser):
             print(f"  Yaw  : {yaw:.2f}")
             print(f"  Temp : {temp:.2f}")
 
+        # REQUEST CARRIPLATION STATUS
+        if command == CMD_REQUEST_CARRIPLATION_STATUS:
+            print("\n[INFO] Carriplation Status Request")
+            if len(data) > 0:
+                if status == 0x00:
+                    print("  Status: Not yet started")
+                elif status == 0x01:
+                    print("  Status: In progress")
+                elif status == 0x02:
+                    print("  Status: Completed")
+                else:
+                    print(f"  Status: Unknown (0x{status:02X})")
+
+        # REQUEST CARRIPLATION EXECUSION
+        if command == CMD_REQUEST_CARRIPLATION_EXECUSION:
+            print("\n[INFO] Carriplation Execution Request")
+
         # REQUEST OUTPUT RANDOM NUMBER
         if command == CMD_REQUEST_OUTPUT_RANDOM_NUMBER:
             print("\n[INFO] RANDOM NUMBER Request")
             message = hex_to_ascii(data.hex())
             print(message)
 
-        # CRCチェック
+        # CRC Check
         crc_calc = crc8_dallas_maxim(bytes([own_id, status, length]) + data)
         print("\n[CRC Check]")
         if crc_calc == crc_recv:
@@ -194,7 +213,7 @@ def main():
     threading.Thread(target=receive_response_thread, args=(ser,), daemon=True).start()
 
     while True:
-        time.sleep(1)  # メインスレッドは生存のためだけ
+        time.sleep(1)
 
 if __name__ == '__main__':
     main()

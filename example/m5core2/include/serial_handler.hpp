@@ -22,13 +22,13 @@ bool serial_read(ReceivedPacket & pkt)
   int max_len = sizeof(recv_packet);
 
   while (read_data_len < max_len) {
-    while (!Serial.available());  // データが来るまで待つ
-    int byte = Serial.read();  // Serial.read() は int型（-1を返す可能性がある）
+    while (!Serial.available());
+    int byte = Serial.read();
     if (byte == -1) continue;
 
     recv_packet[read_data_len++] = static_cast<char>(byte);
 
-    if (byte == '\r') break;  // footer 到達
+    if (byte == '\r') break;
   }
   packet_division(pkt, recv_packet, read_data_len);
 
@@ -58,7 +58,6 @@ bool serial_read(ReceivedPacket & pkt)
   // Check footer (expected '\r')
   return pkt.footer == '\r';
 }
-
 
 bool serial_write(ReceivedPacket & pkt, uint8_t mode)
 {
