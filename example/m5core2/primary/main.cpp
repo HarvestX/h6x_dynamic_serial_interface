@@ -16,11 +16,12 @@ const char* options[] = {
   "03: Request general status", "03: Request firmware version",
   "10: Request device tick", "12: Request firmware write date",
   "13: Request device vendor", "14: Request device name",
-  "15: Request current state", "20: Display CPU usage"
+  "15: Request current state", "20: Display CPU usage",
+  "250: Request output random number" // NEW
 };
 
 const uint8_t return_values[] = {
-  0x00, 0x01, 0x02, 0x03, 0x03, 0x10, 0x12, 0x13, 0x14, 0x15, 0x20
+  0x00, 0x01, 0x02, 0x03, 0x03, 0x10, 0x12, 0x13, 0x14, 0x15, 0x20, 0xFA
 };
 
 const int num_options = sizeof(options) / sizeof(options[0]);

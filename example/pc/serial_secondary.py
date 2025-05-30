@@ -22,16 +22,10 @@ CMD_REQUEST_FIRMWARE_WRITE_DATE = 0x12
 CMD_REQUEST_DEVICE_VENDOR     = 0x13
 CMD_REQUEST_DEVICE_NAME       = 0x14
 CMD_REQUEST_CURRENT_STATE     = 0x15
+CMD_REQUEST_IMU_SENSOR_DATA   = 0x20      
+CMD_REQUEST_OUTPUT_RANDOM_NUMBER = 0xFA #NEW           
 
-global command
-global print_color
-data_bytes = b''
-print_color = 0
-
-# === COLOR DEFINITIONS ===
-RED = "\033[31m"
-GREEN = "\033[32m"
-RESET = "\033[0m"
+command = CMD_PING
 
 def crc8_dallas_maxim(data: bytes) -> int:
     crc = 0x00
@@ -53,68 +47,64 @@ def hex_to_ascii(hex_str):
         print(f"変換エラー: {e}")
         return None
 
-def send_packet(ser):
-    target_id = 0x01
-    global data_bytes
+def command_input_thread():
     global command
-    payload = b''
-    crc_input = bytes([target_id, command, len(data_bytes)]) + data_bytes + payload
-    crc = crc8_dallas_maxim(crc_input)
-    packet = b'#' + bytes([target_id, command, len(data_bytes)]) + data_bytes + bytes([crc]) + b'\r'
-    ser.write(packet)
+    while True:
+        user_input = input("Enter command (e.g., 00, 01, 10): ").strip()
+        try:
+            new_command = int(user_input, 16)
+            command = new_command
+            print(f"[INFO] Command updated to: 0x{command:02X}")
+        except ValueError:
+            print("[ERROR] Invalid input. Please enter a valid hex value like 00, 01, 10.")
 
-    print("\n=== Sent Packet ===")
-    print(f"Command     : 0x{command:02X}")
-    print(f"Packet (hex): {packet.hex()}")
+def send_packet_thread(ser):
+    global command
+    while True:
+        target_id = 0x01
+        data_bytes = bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08])
+        payload = b''
+        crc_input = bytes([target_id, command, len(data_bytes)]) + data_bytes + payload
+        crc = crc8_dallas_maxim(crc_input)
+        packet = b'#' + bytes([target_id, command, len(data_bytes)]) + data_bytes + bytes([crc]) + b'\r'
+        ser.write(packet)
+
+        print("\n=== Sent Packet ===")
+        print(f"Command     : 0x{command:02X}")
+        print(f"Packet (hex): {packet.hex()}")
+
+        time.sleep(0.1)
 
 def receive_response_thread(ser):
     while True:
-        global data_bytes, command
         head = ser.read(1)
         if head != b'$':
             continue
 
-        response = ser.read(4)
-        if len(response) != 4:
+        response = ser.read(3)
+        if len(response) != 3:
             continue
 
-        own_id, command, status, length = response
+        own_id, status, length = response
         data = ser.read(length)
-        data_bytes = data
         response_2 = ser.read(2)
         if len(response_2) != 2:
             continue
+
         crc_recv, footer = response_2
 
-        global print_color
-        if print_color == 1:
-            print(f"\n{RED}=== Recieved data from M5Stack ==={RESET}")
-        elif print_color == 0:
-            print(f"\n{GREEN}=== Recieved data from M5Stack ==={RESET}")
-        else:
-            print("\n=== Recieved data from M5Stack ===")
-
-        
-
+        print("\n=== Received Packet ===")
         print(f"Own ID      : 0x{own_id:02X}")
-        print(f"Command     : 0x{command:02X}")
         print(f"Status      : 0x{status:02X}")
         print(f"Data Length : {length}")
         print(f"Data Bytes  : {' '.join(f'0x{b:02X}' for b in data)}")
         print(f"CRC (Recv)  : 0x{crc_recv:02X}")
         print(f"Footer      : 0x{footer:02X}")
 
-        # PRINT_COLOR
-        if command == CMD_INTERNAL_LED_ON_OFF:
-            if print_color == 0:
-                print(f"\n[INFO] {RED}LED Color: Red{RESET}")
-                print_color = 1
-            elif print_color == 1:
-                print(f"\n[INFO] {GREEN}LED Color: Green{RESET}")
-                print_color = 0
-            else:
-                print(f"\n[INFO] LED Color: Unknown")
-
+        # PINq
+        if command == CMD_PING:
+            print("\n[INFO] Ping Response")
+            print(f"  PING: {data}")
 
         # REBOOT
         if command == CMD_REBOOT_DEVICE:
@@ -125,18 +115,13 @@ def receive_response_thread(ser):
         # REQUEST GENERAL STATUS
         if command == CMD_REQUEST_GENERAL_STATUS:
             print("\n[INFO] General Status Request")
-            if len(data) > 0:
-                print(f"  Status: 0x{data[0]:02X}")
-            else:
-                print("  [ERROR] No status data received.")
+            print(f"  Status: {status}")
 
         # REQUEST FIRMWARE VERSION
         if command == CMD_REQUEST_FIRMWARE_VERSION:
             print("\n[INFO] Firmware Version Request")
-            if len(data) > 0:
-                print(f"  Version: 0x{data[1]:02X}")
-            else:
-                print("  [ERROR] No version data received.")
+            version = data.decode('utf-8', errors='ignore')
+            print(f"  Version: {version}")
 
         # REQUEST DEVICE TICK
         if command == CMD_REQUEST_DEVICE_TICK:
@@ -172,18 +157,25 @@ def receive_response_thread(ser):
         # REQUEST CURRENT STATE
         if command == CMD_REQUEST_CURRENT_STATE:
             print("\n[INFO] Current State Request")
-            print(f"  State: {data.hex()}")
+            print(f"  State: {data}")
 
-        if command == 0x20:
-            # CPU Usage
-            print("\n[INFO] CPU Usage")
-            if len(data) != 4:
-                print("  [ERROR] Invalid data length for CPU usage.")
-            else:
-                usage_percent = struct.unpack('<f', data)[0]
-                print(f"  Usage: {usage_percent:.2f} %")
-            
-        crc_calc = crc8_dallas_maxim(bytes([own_id, command, status, length]) + data)
+        # REQUEST IMU SENSOR DATA
+        if command == CMD_REQUEST_IMU_SENSOR_DATA and len(data) == 16:
+            roll, pitch, yaw, temp = struct.unpack('<ffff', data)
+            print("\n[Sensor Values]")
+            print(f"  Roll : {roll:.2f}")
+            print(f"  Pitch: {pitch:.2f}")
+            print(f"  Yaw  : {yaw:.2f}")
+            print(f"  Temp : {temp:.2f}")
+
+        # REQUEST OUTPUT RANDOM NUMBER
+        if command == CMD_REQUEST_OUTPUT_RANDOM_NUMBER:
+            print("\n[INFO] RANDOM NUMBER Request")
+            message = hex_to_ascii(data.hex())
+            print(message)
+
+        # CRCチェック
+        crc_calc = crc8_dallas_maxim(bytes([own_id, status, length]) + data)
         print("\n[CRC Check]")
         if crc_calc == crc_recv:
             print(f"  Success: CRC matched (0x{crc_recv:02X})")
@@ -192,18 +184,17 @@ def receive_response_thread(ser):
             print(f"    Calculated: 0x{crc_calc:02X}")
             print(f"    Received  : 0x{crc_recv:02X}")
 
-        # Send a packet back to the device
-        send_packet(ser)
-
 def main():
     global command
     ser = serial.Serial('COM12', 115200, timeout=1)
     print("=== Listening on COM12 ===")
 
+    threading.Thread(target=command_input_thread, daemon=True).start()
+    threading.Thread(target=send_packet_thread, args=(ser,), daemon=True).start()
     threading.Thread(target=receive_response_thread, args=(ser,), daemon=True).start()
 
     while True:
-        time.sleep(1)
+        time.sleep(1)  # メインスレッドは生存のためだけ
 
 if __name__ == '__main__':
     main()

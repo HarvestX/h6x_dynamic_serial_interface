@@ -243,6 +243,24 @@ void command_handler(ReceivedPacket & pkt, uint8_t mode)
         pkt.crc_send = create_crc_data(pkt, send_data, 1, status, mode);
         break;
       }
+    case CMD_REQUEST_OUTPUT_RANDOM_NUMBER: {
+        // 8桁のランダムな整数値（00000000〜99999999）
+        uint32_t rand_number = random(10000000, 100000000);  // 8桁保証
+
+        // "rnd_" + 数字 を連結した文字列を作成（例: "rnd_73124819"）
+        char message[13];  // "rnd_" (4文字) + 8桁 + null終端
+        snprintf(message, sizeof(message), "rnd_%08lu", (unsigned long)rand_number);
+
+        // ASCII配列に変換
+        uint8_t send_data[16];     // 余裕を持たせたバッファ
+        uint8_t send_data_len = 0;
+        convert_date_to_ascii_array(message, send_data, &send_data_len, sizeof(send_data));
+
+        // パケット作成
+        pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS, mode);
+        break;
+      }
+
     default: {
         break;
       }
