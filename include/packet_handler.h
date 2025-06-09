@@ -75,7 +75,7 @@ bool create_callback_packet(ReceivedPacket * pkt, char * send_packet)
     return false;
   }
 
-  send_packet[0] = '$';
+  send_packet[0] = (pkt->mode == SERIAL_MODE_PRIMARY) ? '#' : '$';
   send_packet[1] = (pkt->mode == SERIAL_MODE_PRIMARY) ? pkt->target_id : pkt->device_id;
   send_packet[2] = (pkt->mode == SERIAL_MODE_PRIMARY) ? pkt->command : pkt->status;
   send_packet[3] = pkt->send_data_len;

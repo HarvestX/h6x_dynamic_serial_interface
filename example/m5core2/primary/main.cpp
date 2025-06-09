@@ -8,8 +8,10 @@
 ReceivedPacket pkt_send;
 ReceivedPacket pkt_recv;
 
-#define MODE 1
 #define LENGTH 7
+
+#define RX_PORTA 33
+#define TX_PORTA 32
 
 const char* options[] = {
   "00: Ping", "01: Change print color (red/green)", "02: Reboot device",
@@ -59,7 +61,10 @@ void sendSelectedCommand() {
     pkt_send.send_data_len = 1;
   }
 
-  if (!serial_write(pkt_send, MODE)) {
+  pkt_send.mode = SERIAL_MODE_PRIMARY;
+  pkt_send.target_id = 0x01;
+  pkt_send.device_id = PRIMARY_ID;
+  if (!serial_write(pkt_send)) {
     M5.Lcd.fillRect(0, 260, 320, 40, BLACK);
     M5.Lcd.setCursor(20, 260);
     M5.Lcd.setTextColor(RED);
@@ -77,7 +82,8 @@ void setup() {
   M5.Lcd.setTextSize(2);
   M5.Lcd.setTextColor(WHITE, BLACK);
   M5.Lcd.fillScreen(BLACK);
-  Serial.begin(115200);
+  Serial.begin(115200); // PC <--> M5Core2
+  Serial1.begin(115200, SERIAL_8N1, RX_PORTA, TX_PORTA); // M5Core2 <--> M5Core2
   startCPUUsageMonitor();
   drawMenu(selected_index);
 }
@@ -108,8 +114,8 @@ void loop() {
     sendSelectedCommand();
   }
 
-  if (Serial.available() >= LENGTH) {
-    if (!serial_read(pkt_recv)) {
+  if (Serial1.available() >= LENGTH) {
+    if (!serial_read(pkt_recv, SERIAL_MODE_PRIMARY, PRIMARY_ID)) {
       M5.Lcd.setCursor(0, 0);
       M5.Lcd.printf("Failed read\n");
       return;

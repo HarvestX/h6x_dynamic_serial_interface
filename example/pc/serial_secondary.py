@@ -8,7 +8,7 @@ import cpuinfo
 
 
 # === DEVICE ID ===
-DEVICE_ID = 0x01
+TARGET_ID = 0x01
 
 # === COMMAND DEFINITIONS ===
 CMD_PING                       = 0x00
@@ -27,7 +27,7 @@ CMD_REQUEST_CARRIPLATION_STATUS  = 0x21
 CMD_REQUEST_CARRIPLATION_EXECUSION = 0x96   
 CMD_REQUEST_OUTPUT_RANDOM_NUMBER = 0xFA #NEW           
 
-command = CMD_PING
+command = CMD_REQUEST_DEVICE_TICK
 
 def crc8_dallas_maxim(data: bytes) -> int:
     crc = 0x00
@@ -76,7 +76,8 @@ def send_packet_thread(ser):
         print(f"Command     : 0x{command:02X}")
         print(f"Packet (hex): {packet.hex()}")
 
-        time.sleep(0.1)
+        # time.sleep(0.1)
+        time.sleep(1)
 
 def receive_response_thread(ser):
     while True:

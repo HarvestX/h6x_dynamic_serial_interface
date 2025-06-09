@@ -12,9 +12,30 @@
 
 bool serial_read(ReceivedPacket & pkt, const uint8_t mode, const uint8_t own_id)
 {
-  uint8_t header = Serial.read();  // Read packet header
-  if (header != '#') {
-    return false;
+  // header error count = 100
+  uint8_t header_error_count = 0;
+  uint8_t header = 0;
+  while (header_error_count < 100) {
+    if (Serial1.available() > 0) {
+      header = Serial1.read();  // Read packet header
+      Serial.printf("%02X\n", header);
+      if (header == '#' && mode == SERIAL_MODE_SECONDARY) {
+        break;  // Valid header found
+      } else if (header == '$' && mode == SERIAL_MODE_PRIMARY) {
+        break;  // Valid header found
+      } else {
+        header_error_count++;
+      }
+    }
+    delay(1);  // Wait for next byte
+  }
+
+  Serial.printf("\n");
+
+  if (header_error_count >= 100) {
+    M5.Lcd.setCursor(0, 30);
+    M5.Lcd.printf("Header error\n");
+    return false;  // Header not found
   }
 
   char recv_packet[256] = {header};
@@ -22,8 +43,8 @@ bool serial_read(ReceivedPacket & pkt, const uint8_t mode, const uint8_t own_id)
   int max_len = sizeof(recv_packet);
 
   while (read_data_len < max_len) {
-    while (!Serial.available());
-    int byte = Serial.read();
+    while (!Serial1.available());
+    int byte = Serial1.read();
     if (byte == -1) continue;
 
     recv_packet[read_data_len++] = static_cast<char>(byte);
@@ -65,18 +86,18 @@ bool serial_read(ReceivedPacket & pkt, const uint8_t mode, const uint8_t own_id)
   return pkt.footer == '\r';
 }
 
-bool serial_write(ReceivedPacket & pkt, const uint8_t mode)
+bool serial_write(ReceivedPacket & pkt)
 {
   M5.Lcd.setCursor(0, 180);
   command_handler(pkt);
   char send_packet[256] = {};
   if(!create_callback_packet(&pkt, send_packet)) {return false;};
-  Serial.write(send_packet, sizeof(send_packet));  // Send data to serial
+  Serial1.write(send_packet, pkt.send_data_len + 6); // Send packet to M5Core2
 
   // Debug print sent data to M5 LCD
   M5.Lcd.printf("=== SEND ===\n");
-  M5.Lcd.printf("send_data: ");
-  for (int i = 0; i < pkt.send_data_len + 5; ++i) {
+  M5.Lcd.printf("send_data len: %d\n", pkt.send_data_len);
+  for (int i = 0; i < pkt.send_data_len + 6; ++i) {
     M5.Lcd.printf("%02X ", send_packet[i]);
   }
   M5.Lcd.println();
