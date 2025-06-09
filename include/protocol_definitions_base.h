@@ -8,8 +8,16 @@ extern "C" {
 #include <stdint.h>
 
 
-struct ReceivedPacket
+typedef enum SERIAL_MODE {
+  SERIAL_MODE_SECONDARY = 0, // Secondary mode for communication
+  SERIAL_MODE_PRIMARY = 1,   // Primary mode for communication
+  SERIAL_MODE_UNDEFINED = 2 // Undefined mode, used for error handling
+} SERIAL_MODE;
+
+
+typedef struct ReceivedPacket
 {
+  SERIAL_MODE mode;
   uint8_t length;
   uint8_t header;
   uint8_t device_id;
@@ -24,7 +32,9 @@ struct ReceivedPacket
   uint8_t send_data_len;
   uint32_t start_tick;
   uint32_t elapsed_tick;
-};
+} ReceivedPacket;
+
+#define PRIMARY_ID 0x00
 
 
 // === COMMAND DEFINITIONS ===

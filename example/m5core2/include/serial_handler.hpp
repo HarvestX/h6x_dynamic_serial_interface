@@ -10,11 +10,11 @@
 #include "cpu_usage_handler.hpp"
 
 
-bool serial_read(ReceivedPacket & pkt)
+bool serial_read(ReceivedPacket & pkt, const uint8_t mode, const uint8_t own_id)
 {
   uint8_t header = Serial.read();  // Read packet header
   if (header != '#') {
-    return false;                        // Invalid header
+    return false;
   }
 
   char recv_packet[256] = {header};
@@ -30,13 +30,19 @@ bool serial_read(ReceivedPacket & pkt)
 
     if (byte == '\r') break;
   }
-  packet_division(pkt, recv_packet, read_data_len);
+  packet_division(&pkt, recv_packet, read_data_len);
 
   // Check CRC
-  if (!check_crc(pkt)) {
+  if (!check_crc(&pkt)) {
     M5.Lcd.setCursor(0, 0);
     M5.Lcd.printf("CRC error\n");
     return false;  // CRC check failed
+  }
+
+  if (mode == SERIAL_MODE_SECONDARY && pkt.target_id != own_id) {
+    M5.Lcd.setCursor(0, 0);
+    M5.Lcd.printf("Invalid target ID\n");
+    return false;  // Invalid target ID
   }
 
   // Debug print received data to M5 LCD
@@ -59,12 +65,12 @@ bool serial_read(ReceivedPacket & pkt)
   return pkt.footer == '\r';
 }
 
-bool serial_write(ReceivedPacket & pkt, uint8_t mode)
+bool serial_write(ReceivedPacket & pkt, const uint8_t mode)
 {
-  M5.Lcd.setCursor(0, 200);
-  command_handler(pkt, mode);
+  M5.Lcd.setCursor(0, 180);
+  command_handler(pkt);
   char send_packet[256] = {};
-  if(!create_send_packet(pkt, send_packet, mode)) {return false;};
+  if(!create_callback_packet(&pkt, send_packet)) {return false;};
   Serial.write(send_packet, sizeof(send_packet));  // Send data to serial
 
   // Debug print sent data to M5 LCD

@@ -63,12 +63,13 @@ def command_input_thread():
 def send_packet_thread(ser):
     global command
     while True:
-        target_id = 0x01
+        header = ord('#')
+        target_id = TARGET_ID
         data_bytes = bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08])
         payload = b''
-        crc_input = bytes([target_id, command, len(data_bytes)]) + data_bytes + payload
+        crc_input = bytes([header, target_id, command, len(data_bytes)]) + data_bytes + payload
         crc = crc8_dallas_maxim(crc_input)
-        packet = b'#' + bytes([target_id, command, len(data_bytes)]) + data_bytes + bytes([crc]) + b'\r'
+        packet = bytes([header, target_id, command, len(data_bytes)]) + data_bytes + bytes([crc]) + b'\r'
         ser.write(packet)
 
         print("\n=== Sent Packet ===")
@@ -194,7 +195,7 @@ def receive_response_thread(ser):
             print(message)
 
         # CRC Check
-        crc_calc = crc8_dallas_maxim(bytes([own_id, status, length]) + data)
+        crc_calc = crc8_dallas_maxim(bytes([ord('$'), own_id, status, length]) + data)
         print("\n[CRC Check]")
         if crc_calc == crc_recv:
             print(f"  Success: CRC matched (0x{crc_recv:02X})")

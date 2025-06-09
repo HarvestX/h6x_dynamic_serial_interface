@@ -1,67 +1,89 @@
 #ifndef PACKET_HANDLER_H
 #define PACKET_HANDLER_H
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <string.h>
-#include "protocol_definitions.h"
+#include "protocol_definitions_base.h"
 #include "crc8.h"
-#include "command_handler.hpp"
 
-
-bool packet_division(ReceivedPacket & pkt, char * recv_packet, int recv_len){
-  // Parse the received packet into the ReceivedPacket structure
-  pkt.header = recv_packet[0];  // Header
-  pkt.target_id = recv_packet[1];  // Target ID
-  pkt.command = recv_packet[2];  // Command
-  pkt.length = recv_packet[3];  // Length of payload
-
-  if (recv_len < pkt.length + 6 || pkt.length > 245) {
-    return false; // Invalid length or insufficient data
-  }
-  // Read payload data
-  for (int i = 0; i < pkt.length; i++) {
-    pkt.recv_data[i] = recv_packet[i + 4];  // Payload data starts from index 4
+void concat_arrays(
+  const uint8_t * a, const uint8_t len_a,
+  const uint8_t * b, const uint8_t len_b,
+  uint8_t * result, uint8_t * result_len)
+{
+  if (len_a + len_b > 245) {
+    *result_len = 0;    // Overflow check
+    return;
   }
 
-  pkt.crc_recv = recv_packet[pkt.length + 4];  // Received CRC
-  pkt.footer = recv_packet[pkt.length + 5];    // Footer
-
-  return true; // Successful parsing
+  memcpy(result, a, len_a);
+  memcpy(result + len_a, b, len_b);
+  *result_len = len_a + len_b;
 }
 
-bool check_crc(ReceivedPacket & pkt)
+
+
+bool packet_division(ReceivedPacket * pkt, char * recv_packet, int recv_len){
+  if (pkt == NULL || recv_packet == NULL) {
+    return false;
+  }
+
+  pkt->header = recv_packet[0];
+  pkt->target_id = recv_packet[1];
+  pkt->command = recv_packet[2];
+  pkt->length = recv_packet[3];
+
+  if (recv_len < pkt->length + 6 || pkt->length > 245) {
+    return false;
+  }
+
+  for (int i = 0; i < pkt->length; i++) {
+    pkt->recv_data[i] = recv_packet[i + 4];
+  }
+
+  pkt->crc_recv = recv_packet[pkt->length + 4];
+  pkt->footer = recv_packet[pkt->length + 5];
+
+  return true;
+}
+
+bool check_crc(ReceivedPacket * pkt)
 {
-  // Prepare data for CRC check
-  uint8_t crc_input[] = {pkt.target_id, pkt.command, pkt.length};
+  if (pkt == NULL) {
+    return false;
+  }
+
+  uint8_t crc_input[] = {pkt->header, pkt->target_id, pkt->command, pkt->length};
   uint8_t result[245] = {0};
   uint8_t result_len = 0;
 
-  // Combine header and payload for CRC validation
-  concat_arrays(crc_input, 3, pkt.recv_data, pkt.length, result, &result_len);
+  concat_arrays(crc_input, 4, pkt->recv_data, pkt->length, result, &result_len);
   uint8_t crc_calc = crc8_calculate(result, result_len);
 
-  // Check CRC
-  return crc_calc == pkt.crc_recv;
+  return crc_calc == pkt->crc_recv;
 }
 
-bool create_send_packet(ReceivedPacket & pkt, char* send_packet, uint8_t mode)
+bool create_callback_packet(ReceivedPacket * pkt, char * send_packet)
 {
-  send_packet[0] = '$';                        // Header
-  send_packet[1] = OWN_ID;                    // Source ID
-  if (mode == 1){
-    send_packet[2] = pkt.command; // Command
+  if (pkt == NULL || send_packet == NULL) {
+    return false;
   }
-  send_packet[2 + mode] = pkt.status;                // Status
-  send_packet[3 + mode] = pkt.send_data_len;         // Payload length
 
-  memcpy(send_packet + mode + 4, pkt.send_data, pkt.send_data_len); // Payload
-  send_packet[pkt.send_data_len + mode + 4] = pkt.crc_send; // CRC
-  send_packet[pkt.send_data_len + mode + 5] = '\r'; // Footer
+  send_packet[0] = '$';
+  send_packet[1] = (pkt->mode == SERIAL_MODE_PRIMARY) ? pkt->target_id : pkt->device_id;
+  send_packet[2] = (pkt->mode == SERIAL_MODE_PRIMARY) ? pkt->command : pkt->status;
+  send_packet[3] = pkt->send_data_len;
+  memcpy(send_packet + 4, pkt->send_data, pkt->send_data_len);
+  send_packet[pkt->send_data_len + 4] = crc8_calculate((const uint8_t *)send_packet, pkt->send_data_len + 4);
+  send_packet[pkt->send_data_len + 5] = '\r';
 
-  return true; // Successful creation of send data
+  return true;
 } 
 
 #ifdef __cplusplus
