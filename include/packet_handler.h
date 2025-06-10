@@ -13,9 +13,9 @@ extern "C" {
 #include "crc8.h"
 
 void concat_arrays(
-  const uint8_t * a, const uint8_t len_a,
-  const uint8_t * b, const uint8_t len_b,
-  uint8_t * result, uint8_t * result_len)
+  const uint8_t * a, const uint16_t len_a,
+  const uint8_t * b, const uint16_t len_b,
+  uint8_t * result, uint16_t * result_len)
 {
   if (len_a + len_b > 245) {
     *result_len = 0;    // Overflow check
@@ -29,62 +29,65 @@ void concat_arrays(
 
 
 
-bool packet_division(ReceivedPacket * pkt, char * recv_packet, int recv_len){
-  if (pkt == NULL || recv_packet == NULL) {
+bool packet_division(Packet * pkt, char * data, int recv_len){
+  if (pkt == NULL || data == NULL) {
     return false;
   }
 
-  pkt->header = recv_packet[0];
-  pkt->target_id = recv_packet[1];
-  pkt->command = recv_packet[2];
-  pkt->length = recv_packet[3];
+  pkt->mode = SERIAL_MODE_PRIMARY;
+  pkt->header = data[0];
+  pkt->target_id = data[1];
+  pkt->command = data[2];
+  pkt->data_len = data[3];
 
-  if (recv_len < pkt->length + 6 || pkt->length > 245) {
+  if (recv_len < pkt->data_len + 6 || pkt->data_len > 245) {
     return false;
   }
 
-  for (int i = 0; i < pkt->length; i++) {
-    pkt->recv_data[i] = recv_packet[i + 4];
+  for (int i = 0; i < pkt->data_len; i++) {
+    pkt->data[i] = data[i + 4];
   }
 
-  pkt->crc_recv = recv_packet[pkt->length + 4];
-  pkt->footer = recv_packet[pkt->length + 5];
+  pkt->crc = data[pkt->data_len + 4];
+  pkt->footer = data[pkt->data_len + 5];
 
   return true;
 }
 
-bool check_crc(const ReceivedPacket * pkt)
+bool check_crc(const Packet * pkt)
 {
   if (pkt == NULL) {
     return false;
   }
 
-  uint8_t crc_input[] = {pkt->header, pkt->target_id, pkt->command, pkt->length};
+  uint8_t command_or_status = (pkt->mode == SERIAL_MODE_PRIMARY) ? pkt->command : pkt->status;
+  uint8_t crc_input[] = {pkt->header, pkt->target_id, command_or_status, pkt->data_len};
   uint8_t result[245] = {0};
-  uint8_t result_len = 0;
+  uint16_t result_len = 0;
 
-  concat_arrays(crc_input, 4, pkt->recv_data, pkt->length, result, &result_len);
+  concat_arrays(crc_input, 4, pkt->data, pkt->data_len, result, &result_len);
   uint8_t crc_calc = crc8_calculate(result, result_len);
 
-  return crc_calc == pkt->crc_recv;
+  return crc_calc == pkt->crc;
 }
 
-bool create_callback_packet(const ReceivedPacket * pkt, char * send_packet)
+
+bool create_packet(const Packet * pkt, char * send_packet)
 {
   if (pkt == NULL || send_packet == NULL) {
     return false;
   }
 
-  send_packet[0] = (pkt->mode == SERIAL_MODE_PRIMARY) ? '#' : '$';
-  send_packet[1] = (pkt->mode == SERIAL_MODE_PRIMARY) ? pkt->target_id : pkt->device_id;
+  send_packet[0] = pkt->header;
+  send_packet[1] = pkt->target_id;
   send_packet[2] = (pkt->mode == SERIAL_MODE_PRIMARY) ? pkt->command : pkt->status;
-  send_packet[3] = pkt->send_data_len;
-  memcpy(send_packet + 4, pkt->send_data, pkt->send_data_len);
-  send_packet[pkt->send_data_len + 4] = crc8_calculate((const uint8_t *)send_packet, pkt->send_data_len + 4);
-  send_packet[pkt->send_data_len + 5] = '\r';
+  send_packet[3] = pkt->data_len;
+  memcpy(send_packet + 4, pkt->data, pkt->data_len);
+  send_packet[pkt->data_len + 4] = crc8_calculate((const uint8_t *)send_packet, pkt->data_len + 4);
+  send_packet[pkt->data_len + 5] = pkt->footer;
 
   return true;
-} 
+}
 
 #ifdef __cplusplus
 }

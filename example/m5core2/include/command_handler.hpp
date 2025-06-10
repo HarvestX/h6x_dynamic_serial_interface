@@ -67,87 +67,87 @@ void big_endian(const uint32_t value, uint8_t * out_array, uint8_t * out_len)
 }
 
 // Convert date string (e.g., "2025/04/25") to ASCII byte array
-void convert_date_to_ascii_array(const char * date_str, uint8_t * ascii_array, uint8_t * length, const uint8_t max_array_size)
+void convert_date_to_ascii_array(const char * date_str, uint8_t * ascii_array, uint8_t * data_len, const uint8_t max_array_size)
 {
-  if (!date_str || !ascii_array || !length) {return;}
+  if (!date_str || !ascii_array || !data_len) {return;}
 
   uint8_t len = strnlen(date_str, max_array_size);
   for (uint8_t i = 0; i < len; ++i) {
     ascii_array[i] = static_cast<uint8_t>(date_str[i]);
   }
   M5.Lcd.println();
-  *length = len;
+  *data_len = len;
 }
 
 
-void command_handler(ReceivedPacket & pkt)
+void command_handler(const uint8_t & command, Packet & s_pkt)
 {
-  pkt.status = ERR_SUCCESS;
-  switch (pkt.command) {
+  s_pkt.status = ERR_SUCCESS;
+  switch (command) {
     case CMD_PING: {
         uint8_t send_data[] = {0x00};
-        memcpy(pkt.send_data, send_data, sizeof(send_data));
-        pkt.send_data_len = sizeof(send_data);
+        memcpy(s_pkt.data, send_data, sizeof(send_data));
+        s_pkt.data_len = sizeof(send_data);
         break;
       }
     case CMD_INTERNAL_LED_ON_OFF: {
         uint8_t send_data[] = {0x00};
-        memcpy(pkt.send_data, send_data, sizeof(send_data));
-        pkt.send_data_len = sizeof(send_data);
+        memcpy(s_pkt.data, send_data, sizeof(send_data));
+        s_pkt.data_len = sizeof(send_data);
         break;
       }
     case CMD_REBOOT_DEVICE: {
         uint8_t send_data[] = {0x00};
-        memcpy(pkt.send_data, send_data, sizeof(send_data));
-        pkt.send_data_len = sizeof(send_data);
+        memcpy(s_pkt.data, send_data, sizeof(send_data));
+        s_pkt.data_len = sizeof(send_data);
         ESP.restart();   // Reboot the ESP32 device
         break;
       }
     case CMD_REQUEST_GENERAL_STATUS: {
         uint8_t send_data[] = {0x05, VERSION};
-        memcpy(pkt.send_data, send_data, sizeof(send_data));
-        pkt.send_data_len = sizeof(send_data);
+        memcpy(s_pkt.data, send_data, sizeof(send_data));
+        s_pkt.data_len = sizeof(send_data);
         break;
       }
     case CMD_REQUEST_DEVICE_TICK: {
-        pkt.elapsed_tick = millis() - pkt.start_tick;
+        s_pkt.elapsed_tick = millis() - s_pkt.start_tick;
         uint8_t send_data[4];
-        uint8_t send_data_len;
-        big_endian(pkt.elapsed_tick, send_data, &send_data_len);
-        memcpy(pkt.send_data, send_data, send_data_len);
-        pkt.send_data_len = send_data_len;
+        uint8_t data_len;
+        big_endian(s_pkt.elapsed_tick, send_data, &data_len);
+        memcpy(s_pkt.data, send_data, data_len);
+        s_pkt.data_len = data_len;
         break;
       }
     case CMD_REQUEST_INTERNAL_ID: {
         uint8_t send_data[] = {0x10, 0x11, 0x12, 0x13};
-        memcpy(pkt.send_data, send_data, sizeof(send_data));
-        pkt.send_data_len = sizeof(send_data);
+        memcpy(s_pkt.data, send_data, sizeof(send_data));
+        s_pkt.data_len = sizeof(send_data);
         break;
       }
     case CMD_REQUEST_FIRMWARE_WRITE_DATE: {
         uint8_t send_data[16];
-        uint8_t send_data_len = 0;
+        uint8_t data_len = 0;
         const char* message = "2025/04/25";
         uint8_t message_len = strnlen(message, sizeof(send_data));
-        convert_date_to_ascii_array(message, send_data, &send_data_len, message_len);
-        memcpy(pkt.send_data, send_data, send_data_len);
-        pkt.send_data_len = send_data_len;
+        convert_date_to_ascii_array(message, send_data, &data_len, message_len);
+        memcpy(s_pkt.data, send_data, data_len);
+        s_pkt.data_len = data_len;
         break;
       }
     case CMD_REQUEST_DEVICE_VENDOR: {
         uint8_t send_data[16];
-        uint8_t send_data_len = 0;
+        uint8_t data_len = 0;
         const char* message = "Espressif";
         uint8_t message_len = strnlen(message, sizeof(send_data));
-        convert_date_to_ascii_array(message, send_data, &send_data_len, message_len);
+        convert_date_to_ascii_array(message, send_data, &data_len, message_len);
         break;
       }
     case CMD_REQUEST_DEVICE_NAME: {
         uint8_t send_data[16];
-        uint8_t send_data_len = 0;
+        uint8_t data_len = 0;
         const char* message = "ESP32";
         uint8_t message_len = strnlen(message, sizeof(send_data));
-        convert_date_to_ascii_array(message, send_data, &send_data_len, message_len);
+        convert_date_to_ascii_array(message, send_data, &data_len, message_len);
         break;
       }
     case CMD_REQUEST_CURRENT_STATE: {
@@ -155,7 +155,7 @@ void command_handler(ReceivedPacket & pkt)
         break;
       }
     case CMD_REQUEST_IMU: {
-        if (pkt.mode == 0){
+        if (s_pkt.mode == 0){
           unsigned long now = millis();
           float dt = (now - prev_time) / 1000.0f;
           prev_time = now;
@@ -167,17 +167,17 @@ void command_handler(ReceivedPacket & pkt)
           memcpy(send_data + 8, &yaw, sizeof(float));
           memcpy(send_data + 12, &temp, sizeof(float));
 
-          pkt.send_data_len = sizeof(send_data);
-          memcpy(pkt.send_data, send_data, sizeof(send_data));
+          s_pkt.data_len = sizeof(send_data);
+          memcpy(s_pkt.data, send_data, sizeof(send_data));
   
-          pkt.status = status;
+          s_pkt.status = status;
         }
-        else if(pkt.mode == 1){
+        else if(s_pkt.mode == 1){
           float usage = getCPUUsage();
           uint8_t send_data[4];
           encodeCPUUsage(usage, send_data);
-          pkt.send_data_len = sizeof(send_data);
-          memcpy(pkt.send_data, send_data, sizeof(send_data));
+          s_pkt.data_len = sizeof(send_data);
+          memcpy(s_pkt.data, send_data, sizeof(send_data));
         }
         break;
       }
@@ -191,9 +191,9 @@ void command_handler(ReceivedPacket & pkt)
           status = 0x00;
         }
         uint8_t send_data[] = {0x00};
-        pkt.send_data_len = sizeof(send_data);
-        memcpy(pkt.send_data, send_data, sizeof(send_data));
-        pkt.status = status;
+        s_pkt.data_len = sizeof(send_data);
+        memcpy(s_pkt.data, send_data, sizeof(send_data));
+        s_pkt.status = status;
         break;
       }
     case CMD_REQUEST_CARRIPLATION_EXECUSION: {
@@ -208,9 +208,9 @@ void command_handler(ReceivedPacket & pkt)
         }
 
         uint8_t send_data[] = {0x00};
-        pkt.send_data_len = sizeof(send_data);
-        memcpy(pkt.send_data, send_data, sizeof(send_data));
-        pkt.status = status;
+        s_pkt.data_len = sizeof(send_data);
+        memcpy(s_pkt.data, send_data, sizeof(send_data));
+        s_pkt.status = status;
         break;
       }
     case CMD_REQUEST_OUTPUT_RANDOM_NUMBER: {
@@ -218,8 +218,8 @@ void command_handler(ReceivedPacket & pkt)
         char message[13];
         snprintf(message, sizeof(message), "rnd_%08lu", (unsigned long)rand_number);
         uint8_t send_data[16];
-        uint8_t send_data_len = 0;
-        convert_date_to_ascii_array(message, send_data, &send_data_len, sizeof(send_data));
+        uint8_t data_len = 0;
+        convert_date_to_ascii_array(message, send_data, &data_len, sizeof(send_data));
         break;
       }
 
@@ -228,13 +228,13 @@ void command_handler(ReceivedPacket & pkt)
       }
   }
   
-  uint8_t response[3 + pkt.send_data_len];
-  response[0] = pkt.header;
-  response[1] = (pkt.mode == SERIAL_MODE_PRIMARY) ? pkt.target_id : pkt.device_id;
-  response[2] = (pkt.mode == SERIAL_MODE_PRIMARY) ? pkt.command : pkt.status;
-  response[3] = pkt.send_data_len;
-  memcpy(response + 4, pkt.send_data, pkt.send_data_len);
-  pkt.crc_send = crc8_calculate(response, 3 + pkt.send_data_len);
+  uint8_t response[3 + s_pkt.data_len];
+  response[0] = s_pkt.header;
+  response[1] = s_pkt.target_id;
+  response[2] = s_pkt.status;
+  response[3] = s_pkt.data_len;
+  memcpy(response + 4, s_pkt.data, s_pkt.data_len);
+  s_pkt.crc = crc8_calculate(response, 3 + s_pkt.data_len);
 }
 
 #endif

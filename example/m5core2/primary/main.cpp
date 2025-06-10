@@ -5,10 +5,10 @@
 #include "serial_handler.hpp"
 #include "cpu_usage_handler.hpp"
 
-ReceivedPacket pkt_send;
-ReceivedPacket pkt_recv;
+Packet pkt_send;
+Packet pkt_recv;
 
-#define LENGTH 7
+#define DATA_LEN 7
 
 #define RX_PORTA 33
 #define TX_PORTA 32
@@ -54,16 +54,13 @@ void drawMenu(int highlightIndex = -1) {
 }
 
 void sendSelectedCommand() {
-  memset(&pkt_send, 0, sizeof(pkt_send));
+  pkt_send = init_packet(0x01, SERIAL_MODE_PRIMARY); // Initialize packet with target ID and mode
   pkt_send.command = return_values[selected_index];
   if (pkt_send.command == 0x03) {
-    pkt_send.send_data[0] = (selected_index == 3) ? 0x05 : 0x01;
-    pkt_send.send_data_len = 1;
+    pkt_send.data[0] = (selected_index == 3) ? 0x05 : 0x01;
+    pkt_send.data_len = 1;
   }
 
-  pkt_send.mode = SERIAL_MODE_PRIMARY;
-  pkt_send.target_id = 0x01;
-  pkt_send.device_id = PRIMARY_ID;
   if (!serial_write(pkt_send)) {
     M5.Lcd.fillRect(0, 260, 320, 40, BLACK);
     M5.Lcd.setCursor(20, 260);
@@ -114,8 +111,8 @@ void loop() {
     sendSelectedCommand();
   }
 
-  if (Serial1.available() >= LENGTH) {
-    if (!serial_read(pkt_recv, SERIAL_MODE_PRIMARY, PRIMARY_ID)) {
+  if (Serial1.available() >= DATA_LEN) {
+    if (!serial_read(pkt_recv, SERIAL_MODE_PRIMARY, 0x01)) {
       M5.Lcd.setCursor(0, 0);
       M5.Lcd.printf("Failed read\n");
       return;

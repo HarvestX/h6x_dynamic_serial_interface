@@ -59,10 +59,10 @@ case CMD_REQUEST_OUTPUT_RANDOM_NUMBER: {
     snprintf(message, sizeof(message), "rnd_%08lu", (unsigned long)rand_number);
 
     uint8_t send_data[16];
-    uint8_t send_data_len = 0;
-    convert_date_to_ascii_array(message, send_data, &send_data_len, sizeof(send_data));
+    uint8_t data_len = 0;
+    convert_date_to_ascii_array(message, send_data, &data_len, sizeof(send_data));
 
-    pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS, mode);
+    pkt.crc = create_crc_data(pkt, send_data, data_len, ERR_SUCCESS, mode);
     break;
   }
 ```
@@ -151,10 +151,10 @@ case CMD_REQUEST_OUTPUT_RANDOM_NUMBER: {
     snprintf(message, sizeof(message), "rnd_%08lu", (unsigned long)rand_number);
 
     uint8_t send_data[16];
-    uint8_t send_data_len = 0;
-    convert_date_to_ascii_array(message, send_data, &send_data_len, sizeof(send_data));
+    uint8_t data_len = 0;
+    convert_date_to_ascii_array(message, send_data, &data_len, sizeof(send_data));
 
-    pkt.crc_send = create_crc_data(pkt, send_data, send_data_len, ERR_SUCCESS, mode);
+    pkt.crc = create_crc_data(pkt, send_data, data_len, ERR_SUCCESS, mode);
     break;
   }
 ```

@@ -7,10 +7,6 @@ extern "C" {
 
 #include <stdint.h>
 
-/// @brief Calculate CRC-8 checksum (Dallas/Maxim algorithm)
-/// @param input Pointer to input data array
-/// @param len Length of the input data array
-/// @return 8-bit CRC checksum
 inline uint8_t crc8_calculate(const uint8_t * input, const uint16_t len)
 {
   uint8_t crc = 0;
@@ -30,7 +26,7 @@ inline uint8_t crc8_calculate(const uint8_t * input, const uint16_t len)
     }
   }
 
-  return crc; // Final CRC value
+  return crc;
 }
 
 #ifdef __cplusplus

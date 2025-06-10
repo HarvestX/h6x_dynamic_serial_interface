@@ -7,6 +7,7 @@ extern "C" {
 
 #include <stdint.h>
 
+#define DATA_LENGTH_MAX 245 // Maximum data_len of data in a packet
 
 typedef enum SERIAL_MODE {
   SERIAL_MODE_SECONDARY = 0, // Secondary mode for communication
@@ -15,27 +16,30 @@ typedef enum SERIAL_MODE {
 } SERIAL_MODE;
 
 
-typedef struct ReceivedPacket
+typedef struct Packet
 {
-  SERIAL_MODE mode;
-  uint8_t length;
   uint8_t header;
-  uint8_t device_id;
   uint8_t target_id;
+  SERIAL_MODE mode;
   uint8_t command;
   uint8_t status;
-  uint8_t crc_recv;
-  uint8_t crc_send;
+  uint8_t data_len;
+  uint8_t data[DATA_LENGTH_MAX];
+  uint8_t crc;
   uint8_t footer;
-  uint8_t recv_data[245];
-  uint8_t send_data[245];
-  uint8_t send_data_len;
   uint32_t start_tick;
   uint32_t elapsed_tick;
-} ReceivedPacket;
+} Packet;
 
-#define PRIMARY_ID 0x00
-
+Packet init_packet(const uint8_t target_id, const SERIAL_MODE mode)
+{
+  Packet pkt;
+  pkt.header = (mode == SERIAL_MODE_PRIMARY) ? (uint8_t)'#' : (uint8_t)'$';
+  pkt.mode = mode;
+  pkt.target_id = target_id;
+  pkt.footer = '\r';
+  return pkt;
+}
 
 // === COMMAND DEFINITIONS ===
 #define CMD_PING                    0x00
