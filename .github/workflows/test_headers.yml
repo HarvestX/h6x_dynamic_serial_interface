@@ -1,0 +1,60 @@
+name: Test Header Files Compilation
+
+on:
+  push:
+    paths:
+      - 'include/**'
+  pull_request:
+    paths:
+      - 'include/**'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  compile-test:
+    name: Test Header File Compilation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Install build essentials
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+      
+      - name: Verify GCC version
+        run: gcc --version
+      
+      - name: Find and test header files
+        run: |
+          echo "🔍 Finding all header files in include/ directory..."
+          find include/ -name "*.h" -type f | while read header_file; do
+            echo "📝 Testing $header_file"
+            
+            # Create a temporary test file that includes the header
+            TEMP_FILE=$(mktemp)
+            echo "#include \"$header_file\"" > $TEMP_FILE
+            echo "int main(void) { return 0; }" >> $TEMP_FILE
+            
+            # Compile with C99 standard and maximum warnings
+            if ! gcc -std=c99 -c $TEMP_FILE -o /dev/null \
+                  -Wall -Wextra -Werror -pedantic \
+                  -Wformat=2 -Wformat-security -Wformat-nonliteral \
+                  -Wcast-align -Wpointer-arith -Wbad-function-cast \
+                  -Wmissing-prototypes -Wstrict-prototypes \
+                  -Wmissing-declarations -Winline -Wundef \
+                  -Wnested-externs -Wcast-qual -Wshadow \
+                  -Wwrite-strings -Wconversion -Wredundant-decls \
+                  -Wdisabled-optimization -Wfloat-equal -Winit-self \
+                  -Winvalid-pch -I"$(dirname $header_file)"; then
+              echo "❌ Compilation failed for $header_file"
+              rm $TEMP_FILE
+              exit 1
+            fi
+            
+            echo "✅ $header_file passed compilation test"
+            rm $TEMP_FILE
+          done
+          
+          echo "🎉 All header files compiled successfully"

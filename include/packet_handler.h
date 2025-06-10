@@ -53,7 +53,7 @@ bool packet_division(ReceivedPacket * pkt, char * recv_packet, int recv_len){
   return true;
 }
 
-bool check_crc(ReceivedPacket * pkt)
+bool check_crc(const ReceivedPacket * pkt)
 {
   if (pkt == NULL) {
     return false;
@@ -69,7 +69,7 @@ bool check_crc(ReceivedPacket * pkt)
   return crc_calc == pkt->crc_recv;
 }
 
-bool create_callback_packet(ReceivedPacket * pkt, char * send_packet)
+bool create_callback_packet(const ReceivedPacket * pkt, char * send_packet)
 {
   if (pkt == NULL || send_packet == NULL) {
     return false;

@@ -79,18 +79,6 @@ void convert_date_to_ascii_array(const char * date_str, uint8_t * ascii_array, u
   *length = len;
 }
 
-// Create CRC-8 checksum based on status and payload
-uint8_t create_crc_data(ReceivedPacket & pkt)
-{
-  uint8_t response[3 + pkt.send_data_len];
-  response[0] = pkt.header;
-  response[1] = (pkt.mode == SERIAL_MODE_PRIMARY) ? pkt.target_id : pkt.device_id;
-  response[2] = (pkt.mode == SERIAL_MODE_PRIMARY) ? pkt.command : pkt.status;
-  response[3] = pkt.send_data_len;
-  memcpy(response + 4, pkt.send_data, pkt.send_data_len);
-  return crc8_calculate(response, sizeof(response));
-}
-
 
 void command_handler(ReceivedPacket & pkt)
 {
@@ -100,22 +88,18 @@ void command_handler(ReceivedPacket & pkt)
         uint8_t send_data[] = {0x00};
         memcpy(pkt.send_data, send_data, sizeof(send_data));
         pkt.send_data_len = sizeof(send_data);
-        
-        pkt.crc_send = create_crc_data(pkt);
         break;
       }
     case CMD_INTERNAL_LED_ON_OFF: {
         uint8_t send_data[] = {0x00};
         memcpy(pkt.send_data, send_data, sizeof(send_data));
         pkt.send_data_len = sizeof(send_data);
-        pkt.crc_send = create_crc_data(pkt);
         break;
       }
     case CMD_REBOOT_DEVICE: {
         uint8_t send_data[] = {0x00};
         memcpy(pkt.send_data, send_data, sizeof(send_data));
         pkt.send_data_len = sizeof(send_data);
-        pkt.crc_send = create_crc_data(pkt);
         ESP.restart();   // Reboot the ESP32 device
         break;
       }
@@ -123,7 +107,6 @@ void command_handler(ReceivedPacket & pkt)
         uint8_t send_data[] = {0x05, VERSION};
         memcpy(pkt.send_data, send_data, sizeof(send_data));
         pkt.send_data_len = sizeof(send_data);
-        pkt.crc_send = create_crc_data(pkt);
         break;
       }
     case CMD_REQUEST_DEVICE_TICK: {
@@ -133,14 +116,12 @@ void command_handler(ReceivedPacket & pkt)
         big_endian(pkt.elapsed_tick, send_data, &send_data_len);
         memcpy(pkt.send_data, send_data, send_data_len);
         pkt.send_data_len = send_data_len;
-        pkt.crc_send = create_crc_data(pkt);
         break;
       }
     case CMD_REQUEST_INTERNAL_ID: {
         uint8_t send_data[] = {0x10, 0x11, 0x12, 0x13};
         memcpy(pkt.send_data, send_data, sizeof(send_data));
         pkt.send_data_len = sizeof(send_data);
-        pkt.crc_send = create_crc_data(pkt);
         break;
       }
     case CMD_REQUEST_FIRMWARE_WRITE_DATE: {
@@ -151,7 +132,6 @@ void command_handler(ReceivedPacket & pkt)
         convert_date_to_ascii_array(message, send_data, &send_data_len, message_len);
         memcpy(pkt.send_data, send_data, send_data_len);
         pkt.send_data_len = send_data_len;
-        pkt.crc_send = create_crc_data(pkt);
         break;
       }
     case CMD_REQUEST_DEVICE_VENDOR: {
@@ -160,7 +140,6 @@ void command_handler(ReceivedPacket & pkt)
         const char* message = "Espressif";
         uint8_t message_len = strnlen(message, sizeof(send_data));
         convert_date_to_ascii_array(message, send_data, &send_data_len, message_len);
-        pkt.crc_send = create_crc_data(pkt);
         break;
       }
     case CMD_REQUEST_DEVICE_NAME: {
@@ -169,12 +148,10 @@ void command_handler(ReceivedPacket & pkt)
         const char* message = "ESP32";
         uint8_t message_len = strnlen(message, sizeof(send_data));
         convert_date_to_ascii_array(message, send_data, &send_data_len, message_len);
-        pkt.crc_send = create_crc_data(pkt);
         break;
       }
     case CMD_REQUEST_CURRENT_STATE: {
         uint8_t send_data[] = {0x0F};
-        pkt.crc_send = create_crc_data(pkt);
         break;
       }
     case CMD_REQUEST_IMU: {
@@ -194,7 +171,6 @@ void command_handler(ReceivedPacket & pkt)
           memcpy(pkt.send_data, send_data, sizeof(send_data));
   
           pkt.status = status;
-          pkt.crc_send = create_crc_data(pkt); 
         }
         else if(pkt.mode == 1){
           float usage = getCPUUsage();
@@ -202,7 +178,6 @@ void command_handler(ReceivedPacket & pkt)
           encodeCPUUsage(usage, send_data);
           pkt.send_data_len = sizeof(send_data);
           memcpy(pkt.send_data, send_data, sizeof(send_data));
-          pkt.crc_send = create_crc_data(pkt); 
         }
         break;
       }
@@ -219,7 +194,6 @@ void command_handler(ReceivedPacket & pkt)
         pkt.send_data_len = sizeof(send_data);
         memcpy(pkt.send_data, send_data, sizeof(send_data));
         pkt.status = status;
-        pkt.crc_send = create_crc_data(pkt);
         break;
       }
     case CMD_REQUEST_CARRIPLATION_EXECUSION: {
@@ -237,7 +211,6 @@ void command_handler(ReceivedPacket & pkt)
         pkt.send_data_len = sizeof(send_data);
         memcpy(pkt.send_data, send_data, sizeof(send_data));
         pkt.status = status;
-        pkt.crc_send = create_crc_data(pkt);
         break;
       }
     case CMD_REQUEST_OUTPUT_RANDOM_NUMBER: {
@@ -247,7 +220,6 @@ void command_handler(ReceivedPacket & pkt)
         uint8_t send_data[16];
         uint8_t send_data_len = 0;
         convert_date_to_ascii_array(message, send_data, &send_data_len, sizeof(send_data));
-        pkt.crc_send = create_crc_data(pkt);
         break;
       }
 
@@ -255,6 +227,14 @@ void command_handler(ReceivedPacket & pkt)
         break;
       }
   }
+  
+  uint8_t response[3 + pkt.send_data_len];
+  response[0] = pkt.header;
+  response[1] = (pkt.mode == SERIAL_MODE_PRIMARY) ? pkt.target_id : pkt.device_id;
+  response[2] = (pkt.mode == SERIAL_MODE_PRIMARY) ? pkt.command : pkt.status;
+  response[3] = pkt.send_data_len;
+  memcpy(response + 4, pkt.send_data, pkt.send_data_len);
+  pkt.crc_send = crc8_calculate(response, 3 + pkt.send_data_len);
 }
 
 #endif
