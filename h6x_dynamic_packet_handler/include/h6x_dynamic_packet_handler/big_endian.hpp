@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef BIG_ENDIAN_H
-#define BIG_ENDIAN_H
+#ifndef H6X_DYNAMIC_PACKET_HANDLER__BIG_ENDIAN_HPP
+#define H6X_DYNAMIC_PACKET_HANDLER__BIG_ENDIAN_HPP
 
 #include <stdint.h>
 
@@ -137,4 +137,4 @@ static inline uintptr_t big_endian_uintptr(uintptr_t value)
 
 } // namespace h6x_dynamic_serial_interface
 
-#endif // BIG_ENDIAN_H
+#endif // H6X_DYNAMIC_PACKET_HANDLER__BIG_ENDIAN_HPP

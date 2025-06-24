@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PACKET_HANDLER_H
-#define PACKET_HANDLER_H
+#ifndef H6X_DYNAMIC_PACKET_HANDLER__DYNAMIC_PACKET_HANDLER_HPP
+#define H6X_DYNAMIC_PACKET_HANDLER__DYNAMIC_PACKET_HANDLER_HPP
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -42,4 +42,4 @@ bool create_packet(const Packet * pkt, char * send_packet);
 } // namespace h6x_dynamic_serial_interface
 
 
-#endif // PACKET_HANDLER_H
+#endif // H6X_DYNAMIC_PACKET_HANDLER__DYNAMIC_PACKET_HANDLER_HPP

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CRC8_H
-#define CRC8_H
+#ifndef H6X_DYNAMIC_PACKET_HANDLER__CRC8_HPP
+#define H6X_DYNAMIC_PACKET_HANDLER__CRC8_HPP
 
 
 #include <stdint.h>
@@ -25,4 +25,4 @@ uint8_t crc8_calculate(const uint8_t * input, const uint16_t len);
 
 } // namespace h6x_dynamic_serial_interface
 
-#endif // CRC8_H
+#endif // H6X_DYNAMIC_PACKET_HANDLER__CRC8_HPP

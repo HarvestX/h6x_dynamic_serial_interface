@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PROTOCOL_DEFINITIONS_BASE_H
-#define PROTOCOL_DEFINITIONS_BASE_H
+#ifndef H6X_DYNAMIC_PACKET_HANDLER__PROTOCOL_DEFINITIONS_BASE_HPP
+#define H6X_DYNAMIC_PACKET_HANDLER__PROTOCOL_DEFINITIONS_BASE_HPP
 
 #include <stdint.h>
 
@@ -84,4 +84,4 @@ typedef enum
 } // namespace h6x_dynamic_serial_interface
 
 
-#endif // PROTOCOL_DEFINITIONS_BASE_H
+#endif // H6X_DYNAMIC_PACKET_HANDLER__PROTOCOL_DEFINITIONS_BASE_HPP
