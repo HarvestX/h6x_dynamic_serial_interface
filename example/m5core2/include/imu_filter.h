@@ -36,10 +36,10 @@ void updateOrientation(
   pitch = atan2(-ax, sqrt(ay * ay + az * az)) * 180.0f / M_PI;
   // gyroのz軸の値からyawを更新
   yaw += gz * dt * 180.0f / M_PI; // ラジアン/秒から度に変換して積分
-  
+
   // yawを-180〜180度の範囲に正規化
-  while (yaw > 180.0f) yaw -= 360.0f;
-  while (yaw < -180.0f) yaw += 360.0f;
+  while (yaw > 180.0f) {yaw -= 360.0f;}
+  while (yaw < -180.0f) {yaw += 360.0f;}
 }
 
 #endif // IMU_FILTER_H

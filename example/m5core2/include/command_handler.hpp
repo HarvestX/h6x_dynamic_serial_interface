@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <math.h>
 #include "protocol_definitions.h"
-#include "crc8.h"
+#include "crc8.hpp"
 #include "imu_filter.h"
 #include "cpu_usage_handler.hpp"
 
@@ -67,7 +67,9 @@ void big_endian(const uint32_t value, uint8_t * out_array, uint8_t * out_len)
 }
 
 // Convert date string (e.g., "2025/04/25") to ASCII byte array
-void convert_date_to_ascii_array(const char * date_str, uint8_t * ascii_array, uint8_t * data_len, const uint8_t max_array_size)
+void convert_date_to_ascii_array(
+  const char * date_str, uint8_t * ascii_array, uint8_t * data_len,
+  const uint8_t max_array_size)
 {
   if (!date_str || !ascii_array || !data_len) {return;}
 
@@ -127,7 +129,7 @@ void command_handler(const uint8_t & command, Packet & s_pkt)
     case CMD_REQUEST_FIRMWARE_WRITE_DATE: {
         uint8_t send_data[16];
         uint8_t data_len = 0;
-        const char* message = "2025/04/25";
+        const char * message = "2025/04/25";
         uint8_t message_len = strnlen(message, sizeof(send_data));
         convert_date_to_ascii_array(message, send_data, &data_len, message_len);
         memcpy(s_pkt.data, send_data, data_len);
@@ -137,7 +139,7 @@ void command_handler(const uint8_t & command, Packet & s_pkt)
     case CMD_REQUEST_DEVICE_VENDOR: {
         uint8_t send_data[16];
         uint8_t data_len = 0;
-        const char* message = "Espressif";
+        const char * message = "Espressif";
         uint8_t message_len = strnlen(message, sizeof(send_data));
         convert_date_to_ascii_array(message, send_data, &data_len, message_len);
         break;
@@ -145,7 +147,7 @@ void command_handler(const uint8_t & command, Packet & s_pkt)
     case CMD_REQUEST_DEVICE_NAME: {
         uint8_t send_data[16];
         uint8_t data_len = 0;
-        const char* message = "ESP32";
+        const char * message = "ESP32";
         uint8_t message_len = strnlen(message, sizeof(send_data));
         convert_date_to_ascii_array(message, send_data, &data_len, message_len);
         break;
@@ -155,7 +157,7 @@ void command_handler(const uint8_t & command, Packet & s_pkt)
         break;
       }
     case CMD_REQUEST_IMU: {
-        if (s_pkt.mode == 0){
+        if (s_pkt.mode == 0) {
           unsigned long now = millis();
           float dt = (now - prev_time) / 1000.0f;
           prev_time = now;
@@ -169,10 +171,9 @@ void command_handler(const uint8_t & command, Packet & s_pkt)
 
           s_pkt.data_len = sizeof(send_data);
           memcpy(s_pkt.data, send_data, sizeof(send_data));
-  
+
           s_pkt.status = status;
-        }
-        else if(s_pkt.mode == 1){
+        } else if (s_pkt.mode == 1) {
           float usage = getCPUUsage();
           uint8_t send_data[4];
           encodeCPUUsage(usage, send_data);
@@ -227,7 +228,7 @@ void command_handler(const uint8_t & command, Packet & s_pkt)
         break;
       }
   }
-  
+
   uint8_t response[3 + s_pkt.data_len];
   response[0] = s_pkt.header;
   response[1] = s_pkt.target_id;

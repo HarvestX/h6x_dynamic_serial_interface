@@ -1,0 +1,43 @@
+// Copyright 2025 HarvestX Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "h6x_dynamic_packet_handler/crc8.hpp"
+
+
+namespace h6x_dynamic_serial_interface
+{
+
+uint8_t crc8_calculate(const uint8_t * input, const uint16_t len)
+{
+  uint8_t crc = 0;
+
+  for (uint16_t i = 0; i < len; i++) {
+    uint8_t extract = input[i];
+
+    for (uint8_t j = 8; j > 0; j--) {
+      uint8_t sum = (crc ^ extract) & 0x01;
+      crc >>= 1;
+
+      if (sum) {
+        crc ^= 0x8C;
+      }
+
+      extract >>= 1;
+    }
+  }
+
+  return crc;
+}
+
+} // namespace h6x_dynamic_serial_interface

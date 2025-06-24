@@ -4,7 +4,7 @@
 #include <M5Core2.h>
 #include <string.h>
 #include "protocol_definitions.h"
-#include "crc8.h"
+#include "crc8.hpp"
 #include "command_handler.hpp"
 #include "packet_handler.h"
 #include "cpu_usage_handler.hpp"
@@ -42,13 +42,13 @@ bool serial_read(Packet & pkt, const uint8_t mode, const uint8_t own_id)
   int max_len = sizeof(data);
 
   while (read_data_len < max_len) {
-    while (!Serial1.available());
+    while (!Serial1.available()) {}
     int byte = Serial1.read();
-    if (byte == -1) continue;
+    if (byte == -1) {continue;}
 
     data[read_data_len++] = static_cast<char>(byte);
 
-    if (byte == '\r') break;
+    if (byte == '\r') {break;}
   }
   packet_division(&pkt, data, read_data_len);
 
@@ -88,7 +88,7 @@ bool serial_write(Packet & pkt)
 {
   M5.Lcd.setCursor(0, 180);
   char send_packet[256] = {};
-  if(!create_packet(&pkt, send_packet)) {return false;};
+  if (!create_packet(&pkt, send_packet)) {return false;}
   Serial1.write(send_packet, pkt.data_len + 6); // Send packet to M5Core2
 
   // Debug print sent data to M5 LCD

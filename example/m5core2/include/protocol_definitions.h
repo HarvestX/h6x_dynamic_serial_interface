@@ -1,11 +1,8 @@
 #ifndef PROTOCOL_DEFINITIONS_H
 #define PROTOCOL_DEFINITIONS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-#include "protocol_definitions_base.h"
+#include "protocol_definitions_base.hpp"
 
 #define OWN_ID 0x01
 #define VERSION 0x01
@@ -18,9 +15,5 @@ extern "C" {
 
 // === CUSTOM ERROR CODES ===
 #define NOW_CALIBRATING     0x05
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // PROTOCOL_DEFINITIONS_H

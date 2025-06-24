@@ -3,20 +3,19 @@
 
 #include <M5Core2.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 volatile static unsigned long idle_counter = 0;
 
-static void idleTask(void *param) {
+static void idleTask(void * param)
+{
   while (true) {
     idle_counter++;
     delay(1);
   }
 }
 
-static float getCPUUsage() {
+static float getCPUUsage()
+{
   static unsigned long prev_idle = 0;
   static unsigned long prev_time = 0;
 
@@ -41,7 +40,8 @@ static float getCPUUsage() {
   return usage_percent;
 }
 
-static void encodeCPUUsage(float usage_percent, uint8_t out[4]) {
+static void encodeCPUUsage(float usage_percent, uint8_t out[4])
+{
   union {
     float f;
     uint8_t b[4];
@@ -54,12 +54,9 @@ static void encodeCPUUsage(float usage_percent, uint8_t out[4]) {
   }
 }
 
-static void startCPUUsageMonitor() {
+static void startCPUUsageMonitor()
+{
   xTaskCreatePinnedToCore(idleTask, "IdleTask", 2048, NULL, 0, NULL, 1);  // Core 1
 }
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // CPU_USAGE_MONITOR_HPP

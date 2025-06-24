@@ -13,7 +13,7 @@ Packet pkt_recv;
 #define RX_PORTA 33
 #define TX_PORTA 32
 
-const char* options[] = {
+const char * options[] = {
   "00: Ping", "01: Change print color (red/green)", "02: Reboot device",
   "03: Request general status", "03: Request firmware version",
   "10: Request device tick", "12: Request firmware write date",
@@ -33,13 +33,14 @@ const int row_height = 40;
 int selected_index = 0;
 int menu_offset = 0;
 
-void drawMenu(int highlightIndex = -1) {
+void drawMenu(int highlightIndex = -1)
+{
   M5.Lcd.fillScreen(BLACK);
   M5.Lcd.setTextSize(2);
 
   for (int i = 0; i < visible_rows; i++) {
     int option_index = i + menu_offset;
-    if (option_index >= num_options) break;
+    if (option_index >= num_options) {break;}
 
     if (option_index == highlightIndex) {
       M5.Lcd.setTextColor(BLACK, GREEN);
@@ -47,13 +48,16 @@ void drawMenu(int highlightIndex = -1) {
       M5.Lcd.setTextColor(WHITE, BLACK);
     }
 
-    M5.Lcd.fillRect(20, 30 + i * row_height, 280, row_height, (option_index == highlightIndex) ? GREEN : BLACK);
+    M5.Lcd.fillRect(
+      20, 30 + i * row_height, 280, row_height,
+      (option_index == highlightIndex) ? GREEN : BLACK);
     M5.Lcd.setCursor(30, 30 + i * row_height + 8);
     M5.Lcd.println(options[option_index]);
   }
 }
 
-void sendSelectedCommand() {
+void sendSelectedCommand()
+{
   pkt_send = init_packet(0x01, SERIAL_MODE_PRIMARY); // Initialize packet with target ID and mode
   pkt_send.command = return_values[selected_index];
   if (pkt_send.command == 0x03) {
@@ -74,7 +78,8 @@ void sendSelectedCommand() {
   }
 }
 
-void setup() {
+void setup()
+{
   M5.begin();
   M5.Lcd.setTextSize(2);
   M5.Lcd.setTextColor(WHITE, BLACK);
@@ -85,7 +90,8 @@ void setup() {
   drawMenu(selected_index);
 }
 
-void loop() {
+void loop()
+{
   M5.update();
   if (M5.BtnA.wasPressed()) {
     if (selected_index > 0) {
