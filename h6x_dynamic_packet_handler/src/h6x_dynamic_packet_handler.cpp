@@ -32,15 +32,13 @@ void concat_arrays(
   *result_len = len_a + len_b;
 }
 
-bool packet_division(Packet * pkt, const char * data, const uint8_t recv_len)
-{
+bool packet_division(Packet * pkt, const char * data, const uint8_t recv_len){
   if (pkt == NULL || data == NULL) {
     return false;
   }
 
-  pkt->mode = SERIAL_MODE_HOST;
-  pkt->header = data[0];
-  pkt->target_id = data[1];
+  pkt->mode = (data[0] == HEADER_HOST) ? SERIAL_MODE_HOST : SERIAL_MODE_CLIENT;
+  pkt->client_id = data[1];
   pkt->command = data[2];
   pkt->status = data[2];
   pkt->data_len = data[3];
@@ -54,10 +52,12 @@ bool packet_division(Packet * pkt, const char * data, const uint8_t recv_len)
   }
 
   pkt->crc = data[pkt->data_len + 4];
-  pkt->footer = data[pkt->data_len + 5];
-
+  if (data[pkt->data_len + 5] != '\r') {
+    return false;
+  }
   return true;
 }
+
 
 
 bool check_crc(const Packet * pkt)
@@ -67,7 +67,7 @@ bool check_crc(const Packet * pkt)
   }
 
   uint8_t command_or_status = (pkt->mode == SERIAL_MODE_HOST) ? pkt->command : pkt->status;
-  uint8_t crc_input[] = {pkt->header, pkt->target_id, command_or_status, pkt->data_len};
+  uint8_t crc_input[] = {((pkt->mode == SERIAL_MODE_HOST) ? HEADER_HOST : HEADER_CLIENT), pkt->client_id, command_or_status, pkt->data_len};
   uint8_t result[245] = {0};
   uint16_t result_len = 0;
 
@@ -84,15 +84,73 @@ bool create_packet(const Packet * pkt, char * send_packet)
     return false;
   }
 
-  send_packet[0] = pkt->header;
-  send_packet[1] = pkt->target_id;
+  send_packet[0] = (pkt->mode == SERIAL_MODE_HOST) ? HEADER_HOST : HEADER_CLIENT;
+  send_packet[1] = pkt->client_id;
   send_packet[2] = (pkt->mode == SERIAL_MODE_HOST) ? pkt->command : pkt->status;
   send_packet[3] = pkt->data_len;
   memcpy(send_packet + 4, pkt->data, pkt->data_len);
   send_packet[pkt->data_len + 4] = crc8_calculate((const uint8_t *)send_packet, pkt->data_len + 4);
-  send_packet[pkt->data_len + 5] = pkt->footer;
+  send_packet[pkt->data_len + 5] = '\r';
 
   return true;
+}
+
+Packet get_received_packet(const char *input, const int32_t input_len, const uint8_t client_id) {
+    Packet r_pkt = init_packet();
+
+    if (input_len < ADDITIONAL_PACKET_LENGTH + 1 || input == NULL) {
+        r_pkt.is_valid = false;
+        return r_pkt;
+    }
+
+    if (input[0] != HEADER_HOST && input[0] != HEADER_CLIENT) {
+        r_pkt.is_valid = false;
+        return r_pkt;
+    }
+
+    r_pkt.mode = (input[0] == HEADER_HOST) ? SERIAL_MODE_HOST : SERIAL_MODE_CLIENT;
+
+    if (!packet_division(&r_pkt, input, input_len)) {
+        r_pkt.is_valid = false;
+        return r_pkt;
+    }
+
+    if (r_pkt.client_id != client_id) {
+        r_pkt.is_valid = false;
+        return r_pkt;
+    }
+
+    if (!check_crc(&r_pkt)) {
+        r_pkt.is_valid = false;
+        return r_pkt;
+    }
+    r_pkt.is_valid = true;
+    return r_pkt;
+}
+
+
+uint8_t get_serial_data(char *input_buf, const int max_len, serial_getchar_fn_t getchar_fn)
+{
+    uint8_t idx = 0;
+    bool start_bit = false;
+    uint8_t expected_len = 0;
+    
+    while (idx < max_len - 1) {
+        char c = getchar_fn(1000 * 100);
+        
+        if (!start_bit && c == '#') {
+            start_bit = true;
+            idx = 1;
+        } else if (start_bit && c >= 0) {
+            input_buf[idx++] = c;
+            if (idx == 4) {
+                expected_len = (uint8_t)input_buf[idx - 1];
+            } else if (expected_len && idx == expected_len + ADDITIONAL_PACKET_LENGTH) {
+                break;
+            }
+        }
+    }
+    return idx;
 }
 
 } // namespace h6x_dynamic_serial_interface

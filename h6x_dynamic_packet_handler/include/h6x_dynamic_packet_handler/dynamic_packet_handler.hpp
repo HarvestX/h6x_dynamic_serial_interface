@@ -26,6 +26,9 @@
 
 namespace h6x_dynamic_serial_interface
 {
+typedef char (*serial_getchar_fn_t)(uint32_t timeout_us);
+
+uint8_t get_serial_data(char *input_buf, const int max_len, serial_getchar_fn_t getchar_fn);
 
 void concat_arrays(
   const uint8_t * a, const uint16_t len_a,
@@ -38,6 +41,10 @@ bool packet_division(Packet * pkt, const char * data, const uint8_t recv_len);
 bool check_crc(const Packet * pkt);
 
 bool create_packet(const Packet * pkt, char * send_packet);
+
+Packet get_received_packet(const char *input, const int32_t input_len, const uint8_t client_id);
+
+int32_t process_msg(const char *input, int32_t input_len, char *output, int32_t output_max_len);
 
 } // namespace h6x_dynamic_serial_interface
 

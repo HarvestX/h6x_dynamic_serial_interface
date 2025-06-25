@@ -17,13 +17,13 @@
 
 namespace h6x_dynamic_serial_interface
 {
-Packet init_packet(const uint8_t target_id, const SERIAL_MODE mode)
+Packet init_packet()
 {
   Packet pkt;
-  pkt.header = (mode == SERIAL_MODE_HOST) ? (uint8_t)'#' : (uint8_t)'$';
-  pkt.mode = mode;
-  pkt.target_id = target_id;
-  pkt.footer = '\r';
+  pkt.mode = SERIAL_MODE_UNDEFINED;
+  pkt.status = ERR_SUCCESS;
+  pkt.data_len = DATA_LENGTH_MIN;
+  pkt.is_valid = true;
   return pkt;
 }
 } // namespace h6x_dynamic_serial_interface

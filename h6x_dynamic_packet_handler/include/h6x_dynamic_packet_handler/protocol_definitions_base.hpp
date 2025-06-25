@@ -18,7 +18,11 @@
 #include <stdint.h>
 
 #define DATA_LENGTH_MAX 245 // Maximum data_len of data in a packet
+#define DATA_LENGTH_MIN 1
+#define ADDITIONAL_PACKET_LENGTH 6 // Additional bytes for header, client_id, command/status, data_len, crc, footer
 
+#define HEADER_HOST (uint8_t)'#'
+#define HEADER_CLIENT (uint8_t)'$'
 
 namespace h6x_dynamic_serial_interface
 {
@@ -30,38 +34,37 @@ typedef enum SERIAL_MODE
   SERIAL_MODE_UNDEFINED = 2 // Undefined mode, used for error handling
 } SERIAL_MODE;
 
-
 typedef struct Packet
 {
-  uint8_t header;
-  uint8_t target_id;
+  uint8_t client_id;
   SERIAL_MODE mode;
   uint8_t command;
   uint8_t status;
   uint8_t data_len;
   uint8_t data[DATA_LENGTH_MAX];
   uint8_t crc;
-  uint8_t footer;
   uint32_t start_tick;
   uint32_t elapsed_tick;
+  // internal use
+  bool is_valid;
 } Packet;
 
-Packet init_packet(const uint8_t target_id, const SERIAL_MODE mode);
+Packet init_packet();
 
 // === COMMAND DEFINITIONS ===
 typedef enum
 {
-  CMD_PING = 0x00,
-  CMD_INTERNAL_LED_ON_OFF = 0x01,
-  CMD_REBOOT_DEVICE = 0x02,
-  CMD_REQUEST_GENERAL_STATUS = 0x03,
-  CMD_REQUEST_FIRMWARE_VERSION = 0x03,
-  CMD_REQUEST_DEVICE_TICK = 0x10,
-  CMD_REQUEST_INTERNAL_ID = 0x11,
-  CMD_REQUEST_FIRMWARE_WRITE_DATE = 0x12,
-  CMD_REQUEST_DEVICE_VENDOR = 0x13,
-  CMD_REQUEST_DEVICE_NAME = 0x14,
-  CMD_REQUEST_CURRENT_STATE = 0x15
+  CMD_PING = 0,
+  CMD_INTERNAL_LED_ON_OFF = 1,
+  CMD_REBOOT_DEVICE = 2,
+  CMD_REQUEST_GENERAL_STATUS = 3,
+  CMD_REQUEST_FIRMWARE_VERSION = 4,
+  CMD_REQUEST_DEVICE_TICK = 10,
+  CMD_REQUEST_INTERNAL_ID = 11,
+  CMD_REQUEST_FIRMWARE_WRITE_DATE = 12,
+  CMD_REQUEST_DEVICE_VENDOR = 13,
+  CMD_REQUEST_DEVICE_NAME = 14,
+  CMD_REQUEST_CURRENT_STATE = 15
 } PROTOCOL_COMMAND_BASE;
 
 // === ERROR CODES ===
@@ -79,7 +82,6 @@ typedef enum
   ERR_OTHER = 0xFF
 } PROTOCOL_ERROR_CODE;
 
-#define PACKET_LENGTH_MIN 1
 
 } // namespace h6x_dynamic_serial_interface
 
