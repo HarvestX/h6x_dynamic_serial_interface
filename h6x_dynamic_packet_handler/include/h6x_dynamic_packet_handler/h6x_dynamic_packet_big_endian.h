@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef H6X_DYNAMIC_PACKET_HANDLER__BIG_ENDIAN_HPP
-#define H6X_DYNAMIC_PACKET_HANDLER__BIG_ENDIAN_HPP
+#ifndef H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_BIG_ENDIAN_HPP
+#define H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_BIG_ENDIAN_HPP
 
 #include <stdint.h>
-
-namespace h6x_dynamic_serial_interface
-{
 
 static inline int is_little_endian(void)
 {
@@ -135,6 +132,4 @@ static inline uintptr_t big_endian_uintptr(uintptr_t value)
 )(x)
 #endif
 
-} // namespace h6x_dynamic_serial_interface
-
-#endif // H6X_DYNAMIC_PACKET_HANDLER__BIG_ENDIAN_HPP
+#endif // H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_BIG_ENDIAN_HPP

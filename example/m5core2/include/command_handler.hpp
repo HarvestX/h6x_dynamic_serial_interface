@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <math.h>
 #include "protocol_definitions.h"
-#include "crc8.hpp"
+#include "h6x_dynamic_packet_crc8.h"
 #include "imu_filter.h"
 #include "cpu_usage_handler.hpp"
 

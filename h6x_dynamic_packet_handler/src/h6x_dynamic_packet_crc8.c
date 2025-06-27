@@ -12,18 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "h6x_dynamic_packet_handler/protocol_definitions_base.hpp"
+#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_crc8.h"
 
+uint8_t crc8_calculate(const uint8_t * input, const uint16_t len)
+{
+  uint8_t crc = 0;
 
-namespace h6x_dynamic_serial_interface
-{
-Packet init_packet()
-{
-  Packet pkt;
-  pkt.mode = SERIAL_MODE_UNDEFINED;
-  pkt.status = ERR_SUCCESS;
-  pkt.data_len = DATA_LENGTH_MIN;
-  pkt.is_valid = true;
-  return pkt;
+  for (uint16_t i = 0; i < len; i++) {
+    uint8_t extract = input[i];
+
+    for (uint8_t j = 8; j > 0; j--) {
+      uint8_t sum = (crc ^ extract) & 0x01;
+      crc >>= 1;
+
+      if (sum) {
+        crc ^= 0x8C;
+      }
+
+      extract >>= 1;
+    }
+  }
+
+  return crc;
 }
-} // namespace h6x_dynamic_serial_interface
+

@@ -12,20 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef H6X_DYNAMIC_PACKET_HANDLER__DYNAMIC_PACKET_HANDLER_HPP
-#define H6X_DYNAMIC_PACKET_HANDLER__DYNAMIC_PACKET_HANDLER_HPP
+#ifndef H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_HANDLER_HPP
+#define H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_HANDLER_HPP
 
 #include <stdint.h>
 #include <stdbool.h>
-
-
 #include <string.h>
-#include "h6x_dynamic_packet_handler/protocol_definitions_base.hpp"
-#include "h6x_dynamic_packet_handler/crc8.hpp"
+#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_definitions_base.h"
+#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_crc8.h"
 
 
-namespace h6x_dynamic_serial_interface
-{
 typedef char (* serial_getchar_fn_t)(uint32_t timeout_us);
 
 uint8_t get_serial_data(char * input_buf, const int max_len, serial_getchar_fn_t getchar_fn);
@@ -46,7 +42,5 @@ Packet get_received_packet(const char * input, const int32_t input_len, const ui
 
 int32_t process_msg(const char * input, int32_t input_len, char * output, int32_t output_max_len);
 
-} // namespace h6x_dynamic_serial_interface
 
-
-#endif // H6X_DYNAMIC_PACKET_HANDLER__DYNAMIC_PACKET_HANDLER_HPP
+#endif // H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_HANDLER_HPP
