@@ -88,7 +88,7 @@ void PacketCalcGUI::setupUI()
     ui->clientIdSpinBox, QOverload<int>::of(
       &QSpinBox::valueChanged), this, &PacketCalcGUI::onPacketDataChanged);
   connect(
-    ui->modeSpinBox, QOverload<int>::of(
+    ui->CommandSpinBox, QOverload<int>::of(
       &QSpinBox::valueChanged), this, &PacketCalcGUI::onPacketDataChanged);
 }
 
@@ -97,7 +97,7 @@ void PacketCalcGUI::populateSerialPorts()
   ui->portComboBox->clear();
   QDir dir("/dev");
   QStringList filters;
-  // filters << "ttyACM-heye*";
+  filters << "ttyACM*";
   filters << "ttyUSB*";
   QFileInfoList files = dir.entryInfoList(filters, QDir::Files);
   for (const QFileInfo & file : files) {
@@ -232,7 +232,7 @@ void PacketCalcGUI::updatePacketCalculation()
   }
 
   uint8_t client_id = static_cast<uint8_t>(ui->clientIdSpinBox->value());
-  uint8_t command = static_cast<uint8_t>(ui->modeSpinBox->value());
+  uint8_t command = static_cast<uint8_t>(ui->CommandSpinBox->value());
   uint8_t crc = calculateCRC(client_id, command, validData);
 
   ui->calculatedLengthLabel->setText(QString("Calculated Length: %1").arg(validData.size()));
@@ -280,12 +280,11 @@ void PacketCalcGUI::sendCustomPacket()
   }
 
   uint8_t client_id = static_cast<uint8_t>(ui->clientIdSpinBox->value());
-  uint8_t mode = static_cast<uint8_t>(ui->modeSpinBox->value());
 
   Packet packet;
   packet.mode = SERIAL_MODE_HOST;
   packet.client_id = client_id;
-  packet.command = static_cast<uint8_t>(ui->modeSpinBox->value());
+  packet.command = static_cast<uint8_t>(ui->CommandSpinBox->value());
   packet.data_len = validData.size();
 
   if (packet.data_len > 0) {
@@ -296,7 +295,7 @@ void PacketCalcGUI::sendCustomPacket()
   bool success = interface->pub_sub(packet, response);
 
   if (success && response.is_valid) {
-    ui->responseModeLabel->setText(
+    ui->responseCommandLabel->setText(
       QString("Mode: 0x%1").arg(
         response.mode, 2, 16, QChar(
           '0')).toUpper());
@@ -329,7 +328,7 @@ void PacketCalcGUI::sendCustomPacket()
       .arg(packet.command, 2, 16, QChar('0'))
       .arg(response.data_len));
   } else {
-    ui->responseModeLabel->setText("Mode: ERROR");
+    ui->responseCommandLabel->setText("Mode: ERROR");
     ui->responseCrcLabel->setText("CRC: ERROR");
     ui->responseDataLabel->setText("Data: No response or invalid");
     ui->responseDataAsciiLabel->setText("Data (ASCII): No response or invalid");

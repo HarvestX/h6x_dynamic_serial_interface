@@ -108,14 +108,14 @@
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="modeLabel">
+        <widget class="QLabel" name="CommandLabel">
          <property name="text">
-          <string>Mode (0-255):</string>
+          <string>Command (0-255):</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QSpinBox" name="modeSpinBox">
+        <widget class="QSpinBox" name="CommandSpinBox">
          <property name="minimum">
           <number>0</number>
          </property>
@@ -182,9 +182,9 @@
          </property>
          <layout class="QGridLayout" name="responseLayout">
           <item row="0" column="0">
-           <widget class="QLabel" name="responseModeLabel">
+           <widget class="QLabel" name="responseCommandLabel">
             <property name="text">
-             <string>Mode: N/A</string>
+             <string>Command: N/A</string>
             </property>
            </widget>
           </item>
