@@ -23,26 +23,27 @@
 #include "serial_interface.hpp"
 
 
-class serialInterface {
+class serialInterface
+{
 private:
-    std::unique_ptr<LibSerial::SerialStream> serial_stream;
-    std::atomic<bool> running;
-    std::thread timer_thread;
-    std::function<void(const Packet&)> data_callback;
-    int timer_interval_ms;
+  std::unique_ptr<LibSerial::SerialStream> serial_stream;
+  std::atomic<bool> running;
+  std::thread timer_thread;
+  std::function<void(const Packet &)> data_callback;
+  int timer_interval_ms;
 
 public:
-    serialInterface();
-    
-    ~serialInterface() = default;
-    bool init_serial(const std::string &, const int);
-    
-    bool put_serial_data(const Packet *);
-    bool get_serial_data(Packet *);
+  serialInterface();
 
-    void print_packet_bytes(const char *, size_t);
-    void set_data_callback(std::function<void(const Packet&)>);
-    bool pub_sub(const Packet &, Packet &);
+  ~serialInterface() = default;
+  bool init_serial(const std::string &, const int);
+
+  bool put_serial_data(const Packet *);
+  bool get_serial_data(Packet *);
+
+  void print_packet_bytes(const char *, size_t);
+  void set_data_callback(std::function<void(const Packet &)>);
+  bool pub_sub(const Packet &, Packet &);
 };
 
 #endif // SERIAL_INTERFACE_HPP
