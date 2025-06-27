@@ -15,6 +15,10 @@
 #ifndef H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_BIG_ENDIAN_HPP
 #define H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_BIG_ENDIAN_HPP
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 static inline int is_little_endian(void)
@@ -130,6 +134,10 @@ static inline uintptr_t big_endian_uintptr(uintptr_t value)
     intptr_t:  big_endian_intptr, \
     uintptr_t: big_endian_uintptr \
 )(x)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif // H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_BIG_ENDIAN_HPP

@@ -15,6 +15,10 @@
 #ifndef H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_DEFINITIONS_BASE_HPP
 #define H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_DEFINITIONS_BASE_HPP
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -81,5 +85,8 @@ typedef enum
   ERR_OTHER = 0xFF
 } PROTOCOL_ERROR_CODE;
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif // H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_DEFINITIONS_BASE_HPP

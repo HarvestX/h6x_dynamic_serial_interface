@@ -15,9 +15,17 @@
 #ifndef H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_CRC8_HPP
 #define H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_CRC8_HPP
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #include <stdint.h>
 
 uint8_t crc8_calculate(const uint8_t * input, const uint16_t len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_CRC8_HPP

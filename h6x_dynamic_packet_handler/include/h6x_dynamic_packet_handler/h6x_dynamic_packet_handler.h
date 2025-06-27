@@ -15,6 +15,10 @@
 #ifndef H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_HANDLER_HPP
 #define H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_HANDLER_HPP
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -42,5 +46,8 @@ Packet get_received_packet(const char * input, const int32_t input_len, const ui
 
 int32_t process_msg(const char * input, int32_t input_len, char * output, int32_t output_max_len);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif // H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_HANDLER_HPP
