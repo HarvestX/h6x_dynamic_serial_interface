@@ -12,11 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "h6x_dynamic_packet_handler/crc8.hpp"
-
-
-namespace h6x_dynamic_serial_interface
-{
+#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_crc8.h"
 
 uint8_t crc8_calculate(const uint8_t * input, const uint16_t len)
 {
@@ -39,5 +35,3 @@ uint8_t crc8_calculate(const uint8_t * input, const uint16_t len)
 
   return crc;
 }
-
-} // namespace h6x_dynamic_serial_interface

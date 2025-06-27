@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef H6X_DYNAMIC_PACKET_HANDLER__CRC8_HPP
-#define H6X_DYNAMIC_PACKET_HANDLER__CRC8_HPP
+#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_definitions_base.h"
 
 
-#include <stdint.h>
-
-namespace h6x_dynamic_serial_interface
+Packet init_packet()
 {
-
-uint8_t crc8_calculate(const uint8_t * input, const uint16_t len);
-
-} // namespace h6x_dynamic_serial_interface
-
-#endif // H6X_DYNAMIC_PACKET_HANDLER__CRC8_HPP
+  Packet pkt;
+  pkt.mode = SERIAL_MODE_UNDEFINED;
+  pkt.status = ERR_SUCCESS;
+  pkt.data_len = DATA_LENGTH_MIN;
+  pkt.is_valid = true;
+  return pkt;
+}

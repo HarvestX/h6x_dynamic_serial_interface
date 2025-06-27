@@ -2,7 +2,7 @@
 #define PROTOCOL_DEFINITIONS_H
 
 
-#include "protocol_definitions_base.hpp"
+#include "h6x_dynamic_packet_definitions_base.h"
 
 #define OWN_ID 0x01
 #define VERSION 0x01

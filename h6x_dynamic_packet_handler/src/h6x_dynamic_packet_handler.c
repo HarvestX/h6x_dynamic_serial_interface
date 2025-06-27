@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "h6x_dynamic_packet_handler/dynamic_packet_handler.hpp"
+#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_handler.h"
 
-namespace h6x_dynamic_serial_interface
-{
 
 void concat_arrays(
   const uint8_t * a, const uint16_t len_a,
@@ -155,5 +153,3 @@ uint8_t get_serial_data(char * input_buf, const int max_len, serial_getchar_fn_t
   }
   return idx;
 }
-
-} // namespace h6x_dynamic_serial_interface
