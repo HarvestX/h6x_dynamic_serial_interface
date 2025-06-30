@@ -35,4 +35,3 @@ uint8_t crc8_calculate(const uint8_t * input, const uint16_t len)
 
   return crc;
 }
-

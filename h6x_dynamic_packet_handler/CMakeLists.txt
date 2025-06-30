@@ -8,8 +8,7 @@ endif()
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
-# ===================================================================
-set(TARGET h6x_dynamic_packet_handler)
+set(TARGET h6x_dynamic_packet_handler_c)
 ament_auto_add_library(${TARGET} SHARED
   ./src/h6x_dynamic_packet_crc8.c
   ./src/h6x_dynamic_packet_definitions_base.c

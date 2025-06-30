@@ -4,7 +4,7 @@
 #include <M5Core2.h>
 #include <string.h>
 #include "protocol_definitions.h"
-#include "crc8.hpp"
+#include "h6x_dynamic_packet_crc8.h"
 #include "command_handler.hpp"
 #include "packet_handler.h"
 #include "cpu_usage_handler.hpp"
