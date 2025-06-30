@@ -49,7 +49,7 @@ bool packet_division(Packet * pkt, const char * data, const uint8_t recv_len)
   pkt->crc = data[pkt->data_len + 4];
   memcpy(pkt->data, data + 4, pkt->data_len);
   pkt->is_valid = true;
-  
+
   return true;
 }
 
