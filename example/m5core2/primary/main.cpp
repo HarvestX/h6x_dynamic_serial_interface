@@ -27,7 +27,7 @@ const uint8_t return_values[] = {
 };
 
 const int num_options = sizeof(options) / sizeof(options[0]);
-const int visible_rows = 6;
+const int visible_rows = ADDITIONAL_PACKET_LENGTH;
 const int row_height = 40;
 
 int selected_index = 0;

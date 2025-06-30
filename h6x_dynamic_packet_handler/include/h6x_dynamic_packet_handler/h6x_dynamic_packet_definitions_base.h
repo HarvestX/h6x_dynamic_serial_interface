@@ -12,25 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef H6X_DYNAMIC_PACKET_HANDLER__PROTOCOL_DEFINITIONS_BASE_HPP
-#define H6X_DYNAMIC_PACKET_HANDLER__PROTOCOL_DEFINITIONS_BASE_HPP
+#ifndef H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_DEFINITIONS_BASE_HPP
+#define H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_DEFINITIONS_BASE_HPP
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdint.h>
+#include <stdbool.h>
 
-#define DATA_LENGTH_MAX 245 // Maximum data_len of data in a packet
+#define DATA_LENGTH_MAX 251 // Maximum data_len of data in a packet
 #define DATA_LENGTH_MIN 1
-#define ADDITIONAL_PACKET_LENGTH 6 // Additional bytes for header, client_id, command/status, data_len, crc, footer
+#define ADDITIONAL_PACKET_LENGTH 5 // Additional bytes for header, client_id, command/status, data_len, crc
 
 #define HEADER_HOST (uint8_t)'#'
 #define HEADER_CLIENT (uint8_t)'$'
 
-namespace h6x_dynamic_serial_interface
-{
 
 typedef enum SERIAL_MODE
 {
-  SERIAL_MODE_CLIENT = 0, // Secondary mode for communication
-  SERIAL_MODE_HOST = 1,   // Primary mode for communication
+  SERIAL_MODE_HOST = 0,
+  SERIAL_MODE_CLIENT = 1,
   SERIAL_MODE_UNDEFINED = 2 // Undefined mode, used for error handling
 } SERIAL_MODE;
 
@@ -82,8 +85,8 @@ typedef enum
   ERR_OTHER = 0xFF
 } PROTOCOL_ERROR_CODE;
 
+#ifdef __cplusplus
+}
+#endif
 
-} // namespace h6x_dynamic_serial_interface
-
-
-#endif // H6X_DYNAMIC_PACKET_HANDLER__PROTOCOL_DEFINITIONS_BASE_HPP
+#endif // H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_DEFINITIONS_BASE_HPP

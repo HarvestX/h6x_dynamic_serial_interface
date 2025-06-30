@@ -11,9 +11,9 @@ ament_auto_find_build_dependencies()
 # ===================================================================
 set(TARGET h6x_dynamic_packet_handler)
 ament_auto_add_library(${TARGET} SHARED
-  ./src/${TARGET}.cpp
-  ./src/crc8.cpp
-  ./src/protocol_definitions_base.cpp
+  ./src/h6x_dynamic_packet_crc8.c
+  ./src/h6x_dynamic_packet_definitions_base.c
+  ./src/h6x_dynamic_packet_handler.c
 )
 
 # ===================================================================

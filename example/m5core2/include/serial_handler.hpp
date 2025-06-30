@@ -48,7 +48,7 @@ bool serial_read(Packet & pkt, const uint8_t mode, const uint8_t own_id)
 
     data[read_data_len++] = static_cast<char>(byte);
 
-    if (byte == '\r') {break;}
+    if (byte == '\r') {break;} // TODO : update serial_handler
   }
   packet_division(&pkt, data, read_data_len);
 
@@ -81,7 +81,7 @@ bool serial_read(Packet & pkt, const uint8_t mode, const uint8_t own_id)
   M5.Lcd.printf("footer: %02X\n", pkt.footer);
   M5.Lcd.println();
 
-  return pkt.footer == '\r';
+  return true;
 }
 
 bool serial_write(Packet & pkt)
@@ -89,12 +89,12 @@ bool serial_write(Packet & pkt)
   M5.Lcd.setCursor(0, 180);
   char send_packet[256] = {};
   if (!create_packet(&pkt, send_packet)) {return false;}
-  Serial1.write(send_packet, pkt.data_len + 6); // Send packet to M5Core2
+  Serial1.write(send_packet, pkt.data_len + ADDITIONAL_PACKET_LENGTH); // Send packet to M5Core2
 
   // Debug print sent data to M5 LCD
   M5.Lcd.printf("=== SEND ===\n");
   M5.Lcd.printf("send_data len: %d\n", pkt.data_len);
-  for (int i = 0; i < pkt.data_len + 6; ++i) {
+  for (int i = 0; i < pkt.data_len + ADDITIONAL_PACKET_LENGTH; ++i) {
     M5.Lcd.printf("%02X ", send_packet[i]);
   }
   M5.Lcd.println();

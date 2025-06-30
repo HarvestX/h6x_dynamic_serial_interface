@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "h6x_dynamic_packet_handler/dynamic_packet_handler.hpp"
+#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_handler.h"
 
-namespace h6x_dynamic_serial_interface
-{
 
 void concat_arrays(
   const uint8_t * a, const uint16_t len_a,
   const uint8_t * b, const uint16_t len_b,
   uint8_t * result, uint16_t * result_len)
 {
-  if (len_a + len_b > 245) {
+  if (len_a + len_b > DATA_LENGTH_MAX) {
     *result_len = 0;
     return;
   }
@@ -38,24 +36,20 @@ bool packet_division(Packet * pkt, const char * data, const uint8_t recv_len)
     return false;
   }
 
+  pkt->data_len = data[3];
+  if (recv_len < pkt->data_len + ADDITIONAL_PACKET_LENGTH || pkt->data_len > DATA_LENGTH_MAX) {
+    pkt->is_valid = false;
+    return false;
+  }
+
   pkt->mode = (data[0] == HEADER_HOST) ? SERIAL_MODE_HOST : SERIAL_MODE_CLIENT;
   pkt->client_id = data[1];
   pkt->command = data[2];
   pkt->status = data[2];
-  pkt->data_len = data[3];
-
-  if (recv_len < pkt->data_len + 6 || pkt->data_len > 245) {
-    return false;
-  }
-
-  for (int i = 0; i < pkt->data_len; i++) {
-    pkt->data[i] = data[i + 4];
-  }
-
   pkt->crc = data[pkt->data_len + 4];
-  if (data[pkt->data_len + 5] != '\r') {
-    return false;
-  }
+  memcpy(pkt->data, data + 4, pkt->data_len);
+  pkt->is_valid = true;
+  
   return true;
 }
 
@@ -70,7 +64,7 @@ bool check_crc(const Packet * pkt)
   uint8_t crc_input[] =
   {((pkt->mode == SERIAL_MODE_HOST) ? HEADER_HOST : HEADER_CLIENT), pkt->client_id,
     command_or_status, pkt->data_len};
-  uint8_t result[245] = {0};
+  uint8_t result[DATA_LENGTH_MAX] = {0};
   uint16_t result_len = 0;
 
   concat_arrays(crc_input, 4, pkt->data, pkt->data_len, result, &result_len);
@@ -92,7 +86,6 @@ bool create_packet(const Packet * pkt, char * send_packet)
   send_packet[3] = pkt->data_len;
   memcpy(send_packet + 4, pkt->data, pkt->data_len);
   send_packet[pkt->data_len + 4] = crc8_calculate((const uint8_t *)send_packet, pkt->data_len + 4);
-  send_packet[pkt->data_len + 5] = '\r';
 
   return true;
 }
@@ -155,5 +148,3 @@ uint8_t get_serial_data(char * input_buf, const int max_len, serial_getchar_fn_t
   }
   return idx;
 }
-
-} // namespace h6x_dynamic_serial_interface

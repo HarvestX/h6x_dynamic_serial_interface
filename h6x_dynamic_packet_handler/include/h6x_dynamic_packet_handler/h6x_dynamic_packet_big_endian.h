@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef H6X_DYNAMIC_PACKET_HANDLER__BIG_ENDIAN_HPP
-#define H6X_DYNAMIC_PACKET_HANDLER__BIG_ENDIAN_HPP
+#ifndef H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_BIG_ENDIAN_HPP
+#define H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_BIG_ENDIAN_HPP
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdint.h>
-
-namespace h6x_dynamic_serial_interface
-{
 
 static inline int is_little_endian(void)
 {
@@ -28,27 +29,17 @@ static inline int is_little_endian(void)
 
 static inline uint16_t swap_uint16(uint16_t value)
 {
-  return ((value & 0xFF00) >> 8) | ((value & 0x00FF) << 8);
+  return __builtin_bswap16(value);
 }
 
 static inline uint32_t swap_uint32(uint32_t value)
 {
-  return ((value & 0xFF000000) >> 24) |
-         ((value & 0x00FF0000) >> 8) |
-         ((value & 0x0000FF00) << 8) |
-         ((value & 0x000000FF) << 24);
+  return __builtin_bswap32(value);
 }
 
 static inline uint64_t swap_uint64(uint64_t value)
 {
-  return ((value & 0xFF00000000000000ULL) >> 56) |
-         ((value & 0x00FF000000000000ULL) >> 40) |
-         ((value & 0x0000FF0000000000ULL) >> 24) |
-         ((value & 0x000000FF00000000ULL) >> 8) |
-         ((value & 0x00000000FF000000ULL) << 8) |
-         ((value & 0x0000000000FF0000ULL) << 24) |
-         ((value & 0x000000000000FF00ULL) << 40) |
-         ((value & 0x00000000000000FFULL) << 56);
+  return __builtin_bswap64(value);
 }
 
 static inline uint8_t big_endian_uint8(uint8_t value)
@@ -135,6 +126,8 @@ static inline uintptr_t big_endian_uintptr(uintptr_t value)
 )(x)
 #endif
 
-} // namespace h6x_dynamic_serial_interface
+#ifdef __cplusplus
+}
+#endif
 
-#endif // H6X_DYNAMIC_PACKET_HANDLER__BIG_ENDIAN_HPP
+#endif // H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_BIG_ENDIAN_HPP
