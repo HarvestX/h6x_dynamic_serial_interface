@@ -28,7 +28,9 @@ See [demo.md](demo.md) for a demo of the packet handler.
 
 ## Application development
 
-See [application.md](application.md) for application development.
+<!-- See [application.md](application.md) for application development. -->
+
+TODO
 
 <br>
 
