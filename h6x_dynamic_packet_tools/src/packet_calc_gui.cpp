@@ -62,6 +62,7 @@ private:
   QString commandLinePort;
   QString deviceRole;
   QTimer * clientReceiveTimer;
+  int clientRetryCount;
   
   // Asynchronous packet sending
   QFutureWatcher<std::pair<bool, Packet>> * packetSendWatcher;
@@ -79,10 +80,11 @@ PacketCalcGUI::PacketCalcGUI(const QString & commandLinePort, const QString & ro
   connect(packetSendWatcher, &QFutureWatcher<std::pair<bool, Packet>>::finished,
           this, &PacketCalcGUI::onPacketSendCompleted);
   
-  // Setup client receive timer
+  // Setup client receive timer with longer interval to reduce load
   clientReceiveTimer = new QTimer(this);
   connect(clientReceiveTimer, &QTimer::timeout, this, &PacketCalcGUI::onClientReceiveTimer);
-  clientReceiveTimer->setInterval(500);
+  clientReceiveTimer->setInterval(200);  // 200ms interval
+  clientRetryCount = 0;
 
   populateSerialPorts();
   updatePacketCalculation();
@@ -90,10 +92,17 @@ PacketCalcGUI::PacketCalcGUI(const QString & commandLinePort, const QString & ro
 
 PacketCalcGUI::~PacketCalcGUI()
 {
+  // Stop timers first
+  if (clientReceiveTimer && clientReceiveTimer->isActive()) {
+    clientReceiveTimer->stop();
+  }
+  
+  // Cancel and wait for async operations
   if (packetSendWatcher) {
     packetSendWatcher->cancel();
     packetSendWatcher->waitForFinished();
   }
+  
   if (interface) {
     delete interface;
   }
@@ -165,7 +174,8 @@ void PacketCalcGUI::connectToDevice()
     // Start client receive timer if in client mode
     if (deviceRole == "client") {
       clientReceiveTimer->start();
-      logMessage("Started client receive timer (0.5s interval)");
+      clientRetryCount = 0;
+      logMessage("Started client receive timer (200ms interval)");
     }
   } else {
     QMessageBox::warning(
@@ -350,7 +360,7 @@ void PacketCalcGUI::sendCustomPacket()
              .arg(packet.command, 2, 16, QChar('0'))
              .arg(packet.data_len));
 
-  // Start asynchronous packet sending
+  // Start asynchronous packet sending with timeout
   auto future = QtConcurrent::run([this, packet]() -> std::pair<bool, Packet> {
     Packet response;
     bool success;
@@ -363,6 +373,20 @@ void PacketCalcGUI::sendCustomPacket()
   });
 
   packetSendWatcher->setFuture(future);
+  
+  // Setup timeout timer for packet sending
+  QTimer::singleShot(2000, this, [this]() {
+    if (packetSendWatcher && !packetSendWatcher->isFinished()) {
+      packetSendWatcher->cancel();
+      setSendingState(false);
+      logMessage("Packet send operation timed out (2s)");
+      
+      // Update response display with timeout
+      Packet timeoutResponse;
+      timeoutResponse.is_valid = false;
+      updateResponseDisplay(timeoutResponse, false);
+    }
+  });
 }
 
 void PacketCalcGUI::logMessage(const QString & message)
@@ -454,32 +478,31 @@ void PacketCalcGUI::setSendingState(bool sending)
 
 void PacketCalcGUI::onClientReceiveTimer()
 {
-  if (!isConnected || deviceRole != "client") {
+  if (!isConnected || deviceRole != "client" || !interface) {
     return;
   }
   
-  // Asynchronously receive data in client mode
-  auto future = QtConcurrent::run([this]() -> std::pair<bool, Packet> {
-    Packet response;
-    bool success = interface->sub(response);
-    return std::make_pair(success, response);
-  });
+  // Simple synchronous receive - no async complications
+  Packet response;
+  bool success = false;
   
-  // Use a separate watcher for client receive operations
-  auto watcher = new QFutureWatcher<std::pair<bool, Packet>>(this);
-  connect(watcher, &QFutureWatcher<std::pair<bool, Packet>>::finished, [this, watcher]() {
-    auto result = watcher->result();
-    bool success = result.first;
-    Packet response = result.second;
-    
-    if (success && response.is_valid) {
-      onDataReceived(response);
+  try {
+    success = interface->sub(response);
+  } catch (const std::exception& e) {
+    logMessage(QString("Client receive error: %1").arg(e.what()));
+    return;
+  }
+  
+  if (success && response.is_valid) {
+    onDataReceived(response);
+    clientRetryCount = 0;
+  } else {
+    clientRetryCount++;
+    if (clientRetryCount >= 50) {  // 50 * 200ms = 10 seconds
+      logMessage(QString("Client receive: No data after %1 retries").arg(clientRetryCount));
+      clientRetryCount = 0;
     }
-    
-    watcher->deleteLater();
-  });
-  
-  watcher->setFuture(future);
+  }
 }
 
 int main(int argc, char * argv[])

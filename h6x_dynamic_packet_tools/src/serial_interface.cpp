@@ -15,13 +15,13 @@ serialInterface::serialInterface()
 bool serialInterface::init_serial(const std::string & port, const int baudrate = 9600)
 {
   try {
-    serial_stream = std::make_unique<LibSerial::SerialStream>();
-    serial_stream->Open(port);
-    serial_stream->SetBaudRate(LibSerial::BaudRate::BAUD_9600);
-    serial_stream->SetCharacterSize(LibSerial::CharacterSize::CHAR_SIZE_8);
-    serial_stream->SetFlowControl(LibSerial::FlowControl::FLOW_CONTROL_NONE);
-    serial_stream->SetParity(LibSerial::Parity::PARITY_NONE);
-    serial_stream->SetStopBits(LibSerial::StopBits::STOP_BITS_1);
+    serial_port = std::make_unique<LibSerial::SerialPort>();
+    serial_port->Open(port);
+    serial_port->SetBaudRate(LibSerial::BaudRate::BAUD_9600);
+    serial_port->SetCharacterSize(LibSerial::CharacterSize::CHAR_SIZE_8);
+    serial_port->SetFlowControl(LibSerial::FlowControl::FLOW_CONTROL_NONE);
+    serial_port->SetParity(LibSerial::Parity::PARITY_NONE);
+    serial_port->SetStopBits(LibSerial::StopBits::STOP_BITS_1);
     return true;
   } catch (const std::exception & e) {
     std::cerr << "Serial initialization error: " << e.what() << std::endl;
@@ -31,7 +31,7 @@ bool serialInterface::init_serial(const std::string & port, const int baudrate =
 
 bool serialInterface::put_serial_data(const Packet * pkt)
 {
-  if (!serial_stream) {return false;}
+  if (!serial_port) {return false;}
 
   char send_packet[256];
   if (!create_packet(pkt, send_packet)) {
@@ -43,7 +43,7 @@ bool serialInterface::put_serial_data(const Packet * pkt)
 
   try {
     for (size_t i = 0; i < packet_length; i++) {
-      *serial_stream << send_packet[i];
+      serial_port->WriteByte(send_packet[i]);
     }
 
     std::cout << "->: ";
@@ -57,61 +57,72 @@ bool serialInterface::put_serial_data(const Packet * pkt)
 
 bool serialInterface::get_serial_data(Packet * recv_pkt, const uint8_t target_header)
 {
-  if (!serial_stream) {return false;}
+  if (!serial_port) {return false;}
 
   try {
     char response[256];
     char c;
     size_t response_len = 0;
 
-    auto start_time = std::chrono::steady_clock::now();
     while (1) {
-      if (!serial_stream->get(c)) {
-        continue;
-      }
-      if (c == target_header) {
-        response_len = 0;
-        response[response_len++] = c;
-        break;
-      }
-
-      auto elapsed = std::chrono::steady_clock::now() - start_time;
-      if (elapsed > std::chrono::seconds(1)) {
+      try {
+        serial_port->ReadByte(c, 100);
+        if (static_cast<uint8_t>(c) == target_header) {
+          response_len = 0;
+          response[response_len++] = c;
+          break;
+        }
+      } catch (const LibSerial::ReadTimeout&) {
         std::cout << "Timeout waiting for header byte" << std::endl;
         return false;
+      } catch (const std::exception& e) {
+        std::cerr << "Serial read error: " << e.what() << std::endl;
+        return false;
       }
-
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
     uint8_t packet_length = 0;
-    while (serial_stream->get(c)) {
-      response[response_len++] = c;
-      std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0')
-                << static_cast<int>(static_cast<uint8_t>(c)) << " ";
-      if (response_len == 4) {       // After reading the first 4 bytes
-        packet_length = static_cast<uint8_t>(c);         // 0x0d
-        break;
+    try {
+      for (int i = 1; i < 4; i++) {
+        serial_port->ReadByte(c, 100);
+        response[response_len++] = c;
+        std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0')
+                  << static_cast<int>(static_cast<uint8_t>(c)) << " ";
       }
-    }
-    for (size_t i = 0; i < packet_length; i++) {     // -1 because last byte is CRC
-      if (!serial_stream->get(c)) {
-        return false;
-      }
-      response[response_len++] = c;
-    }
-    // Read the CRC byte
-    if (!serial_stream->get(c)) {
-      std::cout << "Failed to read CRC byte." << std::endl;
+      packet_length = static_cast<uint8_t>(response[3]);
+    } catch (const LibSerial::ReadTimeout&) {
+      std::cout << "Timeout reading packet header" << std::endl;
+      return false;
+    } catch (const std::exception& e) {
+      std::cerr << "Serial read error: " << e.what() << std::endl;
       return false;
     }
-    response[response_len++] = c;
-    // read \r
-    if (!serial_stream->get(c)) {
-      std::cout << "Failed to read end of packet character." << std::endl;
-      return false;       // Failed to read end of packet character
+    try {
+      for (size_t i = 0; i < packet_length; i++) {
+        serial_port->ReadByte(c, 100);
+        response[response_len++] = c;
+      }
+    } catch (const LibSerial::ReadTimeout&) {
+      std::cout << "Timeout reading packet data" << std::endl;
+      return false;
+    } catch (const std::exception& e) {
+      std::cerr << "Serial read error: " << e.what() << std::endl;
+      return false;
     }
-    response[response_len++] = c;
+    // Read the CRC byte
+    try {
+      serial_port->ReadByte(c, 100);
+      response[response_len++] = c;
+      // read \r
+      serial_port->ReadByte(c, 100);
+      response[response_len++] = c;
+    } catch (const LibSerial::ReadTimeout&) {
+      std::cout << "Timeout reading CRC or end character" << std::endl;
+      return false;
+    } catch (const std::exception& e) {
+      std::cerr << "Serial read error: " << e.what() << std::endl;
+      return false;
+    }
 
     print_packet_bytes(response, response_len);
 
@@ -157,10 +168,6 @@ bool serialInterface::pub_sub(const Packet & pkt, Packet & recv_pkt)
   std::cout << "Packet sent, waiting for response..." << std::endl;
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-  // while (serial_stream->rdbuf()->in_avail() == 0) {
-  //   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  // }
-  
   if (get_serial_data(&recv_pkt, 0x24)) {
     std::cout << "Response received successfully" << std::endl;
     if (data_callback) {
@@ -176,15 +183,10 @@ bool serialInterface::pub_sub(const Packet & pkt, Packet & recv_pkt)
 
 bool serialInterface::sub(Packet & recv_pkt)
 {
-  if (!serial_stream) {
-    std::cout << "Serial stream not initialized" << std::endl;
+  if (!serial_port) {
+    std::cout << "Serial port not initialized" << std::endl;
     return false;
   }
-
-  // Wait for data to be available
-  // while (serial_stream->rdbuf()->in_avail() == 0) {
-  //   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  // }
 
   // Read data into recv_pkt
   if (get_serial_data(&recv_pkt, 0x23)) {

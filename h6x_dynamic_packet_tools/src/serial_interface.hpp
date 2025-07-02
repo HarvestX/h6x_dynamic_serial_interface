@@ -13,7 +13,7 @@
 #include <thread>
 #include <iostream>
 #include <iomanip>
-#include <libserial/SerialStream.h>
+#include <libserial/SerialPort.h>
 
 
 #include "h6x_dynamic_packet_handler/h6x_dynamic_packet_crc8.h"
@@ -26,7 +26,7 @@
 class serialInterface
 {
 private:
-  std::unique_ptr<LibSerial::SerialStream> serial_stream;
+  std::unique_ptr<LibSerial::SerialPort> serial_port;
   std::atomic<bool> running;
   std::thread timer_thread;
   std::function<void(const Packet &)> data_callback;
