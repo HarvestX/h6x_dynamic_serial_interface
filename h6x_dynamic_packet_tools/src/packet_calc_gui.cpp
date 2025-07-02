@@ -25,7 +25,9 @@ class PacketCalcGUI : public QMainWindow
   Q_OBJECT
 
 public:
-  PacketCalcGUI(const QString & commandLinePort = QString(), const QString & role = "host", QWidget * parent = nullptr);
+  PacketCalcGUI(
+    const QString & commandLinePort = QString(), const QString & role = "host",
+    QWidget * parent = nullptr);
   ~PacketCalcGUI();
 
 private slots:
@@ -60,14 +62,17 @@ private:
   QTimer * clientReceiveTimer;
 };
 
-PacketCalcGUI::PacketCalcGUI(const QString & commandLinePort, const QString & role, QWidget * parent)
-: QMainWindow(parent), ui(new Ui::PacketCalcGUI), interface(nullptr), isConnected(false), isSending(false), commandLinePort(commandLinePort), deviceRole(role)
+PacketCalcGUI::PacketCalcGUI(
+  const QString & commandLinePort, const QString & role,
+  QWidget * parent)
+: QMainWindow(parent), ui(new Ui::PacketCalcGUI), interface(nullptr), isConnected(false), isSending(
+    false), commandLinePort(commandLinePort), deviceRole(role)
 {
   setupUI();
 
   interface = new serialInterface();
-  
-  
+
+
   // Setup client receive timer with longer interval to reduce load
   clientReceiveTimer = new QTimer(this);
   connect(clientReceiveTimer, &QTimer::timeout, this, &PacketCalcGUI::onClientReceiveTimer);
@@ -83,8 +88,8 @@ PacketCalcGUI::~PacketCalcGUI()
   if (clientReceiveTimer && clientReceiveTimer->isActive()) {
     clientReceiveTimer->stop();
   }
-  
-  
+
+
   if (interface) {
     delete interface;
   }
@@ -126,14 +131,14 @@ void PacketCalcGUI::setupUI()
 void PacketCalcGUI::populateSerialPorts()
 {
   ui->portComboBox->clear();
-  
+
   if (!commandLinePort.isEmpty()) {
     ui->portComboBox->addItem(commandLinePort);
     ui->portComboBox->setCurrentIndex(0);
     ui->portComboBox->setEnabled(false);
     return;
   }
-  
+
   QDir dir("/dev");
   QStringList filters;
   filters << "ttyACM*";
@@ -164,7 +169,7 @@ void PacketCalcGUI::connectToDevice()
     isConnected = true;
     updateConnectionStatus(true);
     logMessage("Connected to device on " + port);
-    
+
     // Start client receive timer if in client mode
     if (deviceRole == "client") {
       clientReceiveTimer->start();
@@ -184,7 +189,7 @@ void PacketCalcGUI::disconnectFromDevice()
     isConnected = false;
     updateConnectionStatus(false);
     logMessage("Disconnected from device");
-    
+
     // Stop client receive timer
     if (clientReceiveTimer->isActive()) {
       clientReceiveTimer->stop();
@@ -312,7 +317,9 @@ void PacketCalcGUI::sendCustomPacket()
   }
 
   if (isSending) {
-    QMessageBox::information(this, "Sending in Progress", "Please wait for the current packet to complete.");
+    QMessageBox::information(
+      this, "Sending in Progress",
+      "Please wait for the current packet to complete.");
     return;
   }
 
@@ -349,9 +356,10 @@ void PacketCalcGUI::sendCustomPacket()
 
   // Set sending state
   setSendingState(true);
-  logMessage(QString("Sending packet - Command: 0x%1, Data length: %2")
-             .arg(packet.command, 2, 16, QChar('0'))
-             .arg(packet.data_len));
+  logMessage(
+    QString("Sending packet - Command: 0x%1, Data length: %2")
+    .arg(packet.command, 2, 16, QChar('0'))
+    .arg(packet.data_len));
 
   // Blocking packet sending with 0.2s timeout
   Packet response;
@@ -359,28 +367,29 @@ void PacketCalcGUI::sendCustomPacket()
 
   // ボタンを無効化
   ui->sendPacketButton->setEnabled(false);
-  
+
   try {
     if (deviceRole == "client") {
       success = interface->sub(response);
     } else {
       success = interface->pub_sub(packet, response);
     }
-  } catch (const std::exception& e) {
+  } catch (const std::exception & e) {
     logMessage(QString("Packet send error: %1").arg(e.what()));
     success = false;
   }
 
   // Enable the button again
   ui->sendPacketButton->setEnabled(true);
-  
+
   // Immediately process the result
   setSendingState(false);
   updateResponseDisplay(response, success);
-  
+
   if (success && response.is_valid) {
-    logMessage(QString("Packet sent successfully - Response received with %1 bytes")
-               .arg(response.data_len));
+    logMessage(
+      QString("Packet sent successfully - Response received with %1 bytes")
+      .arg(response.data_len));
   } else {
     logMessage("Packet sent but no valid response received (timeout or no client)");
   }
@@ -443,7 +452,7 @@ void PacketCalcGUI::updateResponseDisplay(const Packet & response, bool success)
 void PacketCalcGUI::setSendingState(bool sending)
 {
   isSending = sending;
-  
+
   if (sending) {
     ui->sendPacketButton->setText("Sending...");
     ui->sendPacketButton->setEnabled(false);
@@ -456,7 +465,7 @@ void PacketCalcGUI::setSendingState(bool sending)
     ui->sendPacketButton->setText("Send Custom Packet");
     ui->sendPacketButton->setEnabled(isConnected);
   }
-  
+
   // Update the packet calculator group enabled state
   ui->packetCalculatorGroup->setEnabled(isConnected && !isSending);
 }
@@ -466,18 +475,18 @@ void PacketCalcGUI::onClientReceiveTimer()
   if (!isConnected || deviceRole != "client" || !interface) {
     return;
   }
-  
+
   // Simple synchronous receive - no async complications
   Packet response;
   bool success = false;
-  
+
   try {
     success = interface->sub(response);
-  } catch (const std::exception& e) {
+  } catch (const std::exception & e) {
     logMessage(QString("Client receive error: %1").arg(e.what()));
     return;
   }
-  
+
   if (success && response.is_valid) {
     onDataReceived(response);
     updateResponseDisplay(response, true);
