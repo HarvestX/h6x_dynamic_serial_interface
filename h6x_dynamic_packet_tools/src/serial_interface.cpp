@@ -102,25 +102,22 @@ bool serialInterface::get_serial_data(Packet * recv_pkt, const uint8_t target_he
     int header_search_count = 0;
     const int MAX_HEADER_SEARCH = 1000;
 
-    // Search for header byte with limited attempts
     header_search_count = 0;
     while (header_search_count < MAX_HEADER_SEARCH) {
       try {
-        serial_port->ReadByte(c, 500);  // Longer timeout for header
+        serial_port->ReadByte(c, 500);
         header_search_count++;
         printf("0x%02X ", static_cast<uint8_t>(c));
         printf("\n");
         
         if (static_cast<uint8_t>(c) == target_header) {
-          response_len = 0;  // Reset response length on new header
+          response_len = 0;
           response[response_len++] = c;
           std::cout << "Header found: 0x" << std::hex << std::setw(2) << std::setfill('0')
                     << static_cast<int>(target_header) << " ";
           break;
         }
       } catch (const LibSerial::ReadTimeout&) {
-        std::cout << "Timeout waiting for header byte 0x" << std::hex 
-                  << static_cast<int>(target_header) << std::endl;
         return false;
       } catch (const std::exception& e) {
         std::cerr << "Serial read error: " << e.what() << std::endl;
@@ -148,9 +145,7 @@ bool serialInterface::get_serial_data(Packet * recv_pkt, const uint8_t target_he
                   << static_cast<int>(static_cast<uint8_t>(c)) << " ";
       }
       packet_length = static_cast<uint8_t>(response[3]);
-      std::cout << "Packet length: " << static_cast<int>(packet_length) << " ";
     } catch (const LibSerial::ReadTimeout&) {
-      std::cout << "Timeout reading packet header" << std::endl;
       return false;
     } catch (const std::exception& e) {
       std::cerr << "Serial read error: " << e.what() << std::endl;
@@ -235,7 +230,6 @@ bool serialInterface::pub_sub(const Packet & pkt, Packet & recv_pkt)
 {
   std::lock_guard<std::mutex> lock(serial_mutex);
   
-  // Initialize response packet
   memset(&recv_pkt, 0, sizeof(Packet));
   recv_pkt.is_valid = false;
   
@@ -243,9 +237,7 @@ bool serialInterface::pub_sub(const Packet & pkt, Packet & recv_pkt)
     std::cout << "Failed to send packet" << std::endl;
     return false;
   }
-  
-  std::cout << "Packet sent, waiting for response..." << std::endl;
-  // Reduced wait time for faster response
+
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
   if (get_serial_data(&recv_pkt, 0x24)) {
@@ -270,18 +262,24 @@ bool serialInterface::sub(Packet & recv_pkt)
     return false;
   }
 
-  // Initialize packet
   memset(&recv_pkt, 0, sizeof(Packet));
   recv_pkt.is_valid = false;
   
-  // Read data into recv_pkt
   if (get_serial_data(&recv_pkt, 0x23)) {
     if (data_callback) {
+      uint8_t callback_data[6] = {0x24, 0x01, 0x00, 0x01, 0x00, 0x00};
+      uint8_t crc_calc = crc8_calculate(callback_data, sizeof(callback_data) - 1);
+      callback_data[5] = crc_calc;
+      try {
+        serial_port->Write(std::string(reinterpret_cast<const char *>(callback_data), sizeof(callback_data)));
+      } catch (const std::exception & e) {
+        std::cerr << "Error sending callback data: " << e.what() << std::endl;
+      }
+
       data_callback(recv_pkt);
     }
     return true;
   } else {
-    // Don't log failure as it's expected during polling
     return false;
   }
 }
