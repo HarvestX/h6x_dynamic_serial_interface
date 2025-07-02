@@ -102,19 +102,6 @@ bool serialInterface::get_serial_data(Packet * recv_pkt, const uint8_t target_he
     int header_search_count = 0;
     const int MAX_HEADER_SEARCH = 1000;
 
-    // try {
-    //   while (1) {
-    //     serial_port->ReadByte(c, 1);
-    //     header_search_count++;
-    //     if (header_search_count > MAX_HEADER_SEARCH) {
-    //       std::cout << "Too many bytes in buffer, clearing" << std::endl;
-    //       break;
-    //     }
-    //   }
-    // } catch (const LibSerial::ReadTimeout&) {
-    //   // Expected when no more data
-    // }
-
     // Search for header byte with limited attempts
     header_search_count = 0;
     while (header_search_count < MAX_HEADER_SEARCH) {

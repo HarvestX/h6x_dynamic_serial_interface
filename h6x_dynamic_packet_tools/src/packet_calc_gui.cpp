@@ -98,6 +98,13 @@ void PacketCalcGUI::setupUI()
 {
   ui->setupUi(this);
 
+  QString title = this->windowTitle();
+  if (deviceRole == "host") {
+    setWindowTitle(title + " (HOST)");
+  } else if (deviceRole == "client") {
+    setWindowTitle(title + " (CLIENT)");
+  }
+
   // Connect signals
   connect(ui->connectButton, &QPushButton::clicked, this, &PacketCalcGUI::connectToDevice);
   connect(ui->disconnectButton, &QPushButton::clicked, this, &PacketCalcGUI::disconnectFromDevice);
@@ -397,8 +404,8 @@ void PacketCalcGUI::updateResponseDisplay(const Packet & response, bool success)
 {
   if (success && response.is_valid) {
     ui->responseCommandLabel->setText(
-      QString("Mode: 0x%1").arg(
-        response.mode, 2, 16, QChar('0')).toUpper());
+      QString("Command: 0x%1").arg(
+        response.command, 2, 16, QChar('0')).toUpper());
     ui->responseCrcLabel->setText(
       QString("CRC: 0x%1").arg(
         response.crc, 2, 16, QChar('0')).toUpper());
@@ -422,7 +429,7 @@ void PacketCalcGUI::updateResponseDisplay(const Packet & response, bool success)
     ui->responseDataLabel->setText(dataStr);
     ui->responseDataAsciiLabel->setText(asciiStr);
   } else {
-    ui->responseCommandLabel->setText("Mode: TIMEOUT");
+    ui->responseCommandLabel->setText("Command: TIMEOUT");
     ui->responseCrcLabel->setText("CRC: N/A");
     ui->responseDataLabel->setText("Data: No response (timeout after 1s)");
     ui->responseDataAsciiLabel->setText("Data (ASCII): No response");
@@ -436,7 +443,7 @@ void PacketCalcGUI::setSendingState(bool sending)
   if (sending) {
     ui->sendPacketButton->setText("Sending...");
     ui->sendPacketButton->setEnabled(false);
-    ui->responseCommandLabel->setText("Mode: SENDING");
+    ui->responseCommandLabel->setText("Command: SENDING");
     ui->responseCrcLabel->setText("CRC: SENDING");
     ui->responseDataLabel->setText("Data: Waiting for response...");
     ui->responseDataAsciiLabel->setText("Data (ASCII): Waiting...");
@@ -468,6 +475,7 @@ void PacketCalcGUI::onClientReceiveTimer()
   
   if (success && response.is_valid) {
     onDataReceived(response);
+    updateResponseDisplay(response, true);
     clientRetryCount = 0;
   } else {
     clientRetryCount++;
