@@ -58,8 +58,6 @@ private:
   QString commandLinePort;
   QString deviceRole;
   QTimer * clientReceiveTimer;
-  int clientRetryCount;
-  
 };
 
 PacketCalcGUI::PacketCalcGUI(const QString & commandLinePort, const QString & role, QWidget * parent)
@@ -73,8 +71,7 @@ PacketCalcGUI::PacketCalcGUI(const QString & commandLinePort, const QString & ro
   // Setup client receive timer with longer interval to reduce load
   clientReceiveTimer = new QTimer(this);
   connect(clientReceiveTimer, &QTimer::timeout, this, &PacketCalcGUI::onClientReceiveTimer);
-  clientReceiveTimer->setInterval(200);  // 200ms interval
-  clientRetryCount = 0;
+  clientReceiveTimer->setInterval(200);
 
   populateSerialPorts();
   updatePacketCalculation();
@@ -103,6 +100,11 @@ void PacketCalcGUI::setupUI()
     setWindowTitle(title + " (HOST)");
   } else if (deviceRole == "client") {
     setWindowTitle(title + " (CLIENT)");
+    ui->packetDataTextEdit->setEnabled(false);
+    ui->calculateButton->setEnabled(false);
+    ui->sendPacketButton->setEnabled(false);
+    ui->CommandSpinBox->setEnabled(false);
+    ui->clientIdSpinBox->setEnabled(false);
   }
 
   // Connect signals
@@ -166,7 +168,6 @@ void PacketCalcGUI::connectToDevice()
     // Start client receive timer if in client mode
     if (deviceRole == "client") {
       clientReceiveTimer->start();
-      clientRetryCount = 0;
       logMessage("Started client receive timer (200ms interval)");
     }
   } else {
@@ -476,13 +477,6 @@ void PacketCalcGUI::onClientReceiveTimer()
   if (success && response.is_valid) {
     onDataReceived(response);
     updateResponseDisplay(response, true);
-    clientRetryCount = 0;
-  } else {
-    clientRetryCount++;
-    if (clientRetryCount >= 50) {  // 50 * 200ms = 10 seconds
-      logMessage(QString("Client receive: No data after %1 retries").arg(clientRetryCount));
-      clientRetryCount = 0;
-    }
   }
 }
 
