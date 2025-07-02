@@ -6,6 +6,8 @@
 
 
 #include "serial_interface.hpp"
+#include <chrono>
+#include <thread>
 
 serialInterface::serialInterface()
 : running(false), timer_interval_ms(1000) {}
@@ -53,7 +55,7 @@ bool serialInterface::put_serial_data(const Packet * pkt)
   }
 }
 
-bool serialInterface::get_serial_data(Packet * recv_pkt)
+bool serialInterface::get_serial_data(Packet * recv_pkt, const uint8_t target_header)
 {
   if (!serial_stream) {return false;}
 
@@ -67,15 +69,19 @@ bool serialInterface::get_serial_data(Packet * recv_pkt)
       if (!serial_stream->get(c)) {
         continue;
       }
-      if (c == 0x24) {
+      if (c == target_header) {
+        response_len = 0;
         response[response_len++] = c;
         break;
       }
 
       auto elapsed = std::chrono::steady_clock::now() - start_time;
       if (elapsed > std::chrono::seconds(1)) {
-        return false;         // Timeout
+        std::cout << "Timeout waiting for header byte" << std::endl;
+        return false;
       }
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
     uint8_t packet_length = 0;
@@ -97,7 +103,7 @@ bool serialInterface::get_serial_data(Packet * recv_pkt)
     // Read the CRC byte
     if (!serial_stream->get(c)) {
       std::cout << "Failed to read CRC byte." << std::endl;
-      return false;       // Failed to read CRC byte
+      return false;
     }
     response[response_len++] = c;
     // read \r
@@ -110,7 +116,6 @@ bool serialInterface::get_serial_data(Packet * recv_pkt)
     print_packet_bytes(response, response_len);
 
     if (packet_division(recv_pkt, response, response_len)) {
-      // check_crc(recv_pkt) ? return true : false;
       if (check_crc(recv_pkt)) {
         recv_pkt->is_valid = true;
         return true;
@@ -144,16 +149,53 @@ void serialInterface::set_data_callback(std::function<void(const Packet &)> call
 
 bool serialInterface::pub_sub(const Packet & pkt, Packet & recv_pkt)
 {
-  if (put_serial_data(&pkt)) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    if (get_serial_data(&recv_pkt)) {
-      if (data_callback) {
-        data_callback(recv_pkt);
-        return true;
-      }
-    }
+  if (!put_serial_data(&pkt)) {
+    std::cout << "Failed to send packet" << std::endl;
+    return false;
   }
-  return false;
+  
+  std::cout << "Packet sent, waiting for response..." << std::endl;
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+  // while (serial_stream->rdbuf()->in_avail() == 0) {
+  //   std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  // }
+  
+  if (get_serial_data(&recv_pkt, 0x24)) {
+    std::cout << "Response received successfully" << std::endl;
+    if (data_callback) {
+      data_callback(recv_pkt);
+    }
+    return true;
+  } else {
+    std::cout << "No response received (timeout)" << std::endl;
+    recv_pkt.is_valid = false;
+    return false;
+  }
+}
+
+bool serialInterface::sub(Packet & recv_pkt)
+{
+  if (!serial_stream) {
+    std::cout << "Serial stream not initialized" << std::endl;
+    return false;
+  }
+
+  // Wait for data to be available
+  // while (serial_stream->rdbuf()->in_avail() == 0) {
+  //   std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  // }
+
+  // Read data into recv_pkt
+  if (get_serial_data(&recv_pkt, 0x23)) {
+    if (data_callback) {
+      data_callback(recv_pkt);
+    }
+    return true;
+  } else {
+    std::cout << "Failed to receive packet" << std::endl;
+    return false;
+  }
 }
 
 // === Recived packet example ===

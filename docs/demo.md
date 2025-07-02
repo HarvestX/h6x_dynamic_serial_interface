@@ -7,24 +7,31 @@ This demo demonstrates the H6X Dynamic Serial Interface protocol using the packe
 ## Prerequisites
 
 ### System Requirements
-- Linux environment (tested on Ubuntu 20.04/22.04)
-- Qt5 development libraries
-- libserial library
+- ROS 2 Humble or later
 - socat (for virtual serial port creation)
 
 ### Installation
 
-Install required dependencies:
-```bash
-# Ubuntu/Debian
-sudo apt-get update
-sudo apt-get install qt5-default qttools5-dev libserial-dev socat
+ROS 2 package dependencies must be installed before running the demo. The following commands will install the necessary dependencies and build the application:
 
-# Build the application
-cd h6x_dynamic_packet_tools
-mkdir build && cd build
-cmake ..
-make
+```bash
+source /opt/ros/humble/setup.bash
+
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws/src
+git clone https://github.com/HarvestX/h6x_dynamic_serial_interface.git
+
+cd ~/ros2_ws/
+rosdep install -y --from-paths . --ignore-src
+
+colcon build --symlink-install
+source install/setup.bash
+```
+
+Install `socat` if not already installed:
+
+```bash
+sudo apt install -y socat
 ```
 
 ## Demo Setup
@@ -51,8 +58,10 @@ Note the two PTY devices (e.g., `/dev/pts/2` and `/dev/pts/3`) - these will be u
 In a new terminal, launch the host instance:
 
 ```bash
-cd h6x_dynamic_packet_tools/build
-./packet_calc_gui --ros-args -p role:="host"
+cd ~/ros2_ws/
+source install/setup.bash
+
+ros2 run h6x_dynamic_packet_tools packet_calc_gui --ros-args -p role:="host"
 ```
 
 **Configuration:**
