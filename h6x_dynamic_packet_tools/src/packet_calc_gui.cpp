@@ -407,6 +407,8 @@ void PacketCalcGUI::updateResponseDisplay(const Packet & response, bool success)
     ui->responseCommandLabel->setText(
       QString("Command: 0x%1").arg(
         response.command, 2, 16, QChar('0')).toUpper());
+    ui->responseClientIdLabel->setText(
+      QString("Client ID: %1").arg(response.client_id));
     ui->responseCrcLabel->setText(
       QString("CRC: 0x%1").arg(
         response.crc, 2, 16, QChar('0')).toUpper());
@@ -431,6 +433,7 @@ void PacketCalcGUI::updateResponseDisplay(const Packet & response, bool success)
     ui->responseDataAsciiLabel->setText(asciiStr);
   } else {
     ui->responseCommandLabel->setText("Command: TIMEOUT");
+    ui->responseClientIdLabel->setText("Client ID: N/A");
     ui->responseCrcLabel->setText("CRC: N/A");
     ui->responseDataLabel->setText("Data: No response (timeout after 1s)");
     ui->responseDataAsciiLabel->setText("Data (ASCII): No response");
@@ -445,6 +448,7 @@ void PacketCalcGUI::setSendingState(bool sending)
     ui->sendPacketButton->setText("Sending...");
     ui->sendPacketButton->setEnabled(false);
     ui->responseCommandLabel->setText("Command: SENDING");
+    ui->responseClientIdLabel->setText("Client ID: SENDING");
     ui->responseCrcLabel->setText("CRC: SENDING");
     ui->responseDataLabel->setText("Data: Waiting for response...");
     ui->responseDataAsciiLabel->setText("Data (ASCII): Waiting...");

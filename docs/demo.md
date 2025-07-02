@@ -4,6 +4,8 @@
 
 This demo demonstrates the H6X Dynamic Serial Interface protocol using the packet calculation GUI tool. The demo creates a virtual serial interface connection between two instances of the packet_calc_gui application - one acting as a host and another as a client.
 
+![](media/packet_pub_sub_demo.png)
+
 ## Prerequisites
 
 ### System Requirements
