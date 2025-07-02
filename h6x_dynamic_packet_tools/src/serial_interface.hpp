@@ -13,6 +13,7 @@
 #include <thread>
 #include <iostream>
 #include <iomanip>
+#include <mutex>
 #include <libserial/SerialPort.h>
 
 
@@ -31,11 +32,11 @@ private:
   std::thread timer_thread;
   std::function<void(const Packet &)> data_callback;
   int timer_interval_ms;
+  mutable std::mutex serial_mutex;
 
 public:
   serialInterface();
-
-  ~serialInterface() = default;
+  ~serialInterface();
   bool init_serial(const std::string &, const int);
 
   bool put_serial_data(const Packet *);

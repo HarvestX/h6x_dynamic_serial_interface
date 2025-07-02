@@ -11,9 +11,6 @@
 #include <QtCore/QDateTime>
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
-#include <QtConcurrent/QtConcurrent>
-#include <QtCore/QFuture>
-#include <QtCore/QFutureWatcher>
 #include <vector>
 #include <cstring>
 #include "ui_packet_calc_gui.h"
@@ -38,7 +35,6 @@ private slots:
   void sendCustomPacket();
   void onPacketDataChanged();
   void onDataReceived(const Packet & packet);
-  void onPacketSendCompleted();
   void onClientReceiveTimer();
 
 private:
@@ -64,8 +60,6 @@ private:
   QTimer * clientReceiveTimer;
   int clientRetryCount;
   
-  // Asynchronous packet sending
-  QFutureWatcher<std::pair<bool, Packet>> * packetSendWatcher;
 };
 
 PacketCalcGUI::PacketCalcGUI(const QString & commandLinePort, const QString & role, QWidget * parent)
@@ -75,10 +69,6 @@ PacketCalcGUI::PacketCalcGUI(const QString & commandLinePort, const QString & ro
 
   interface = new serialInterface();
   
-  // Setup asynchronous packet sending
-  packetSendWatcher = new QFutureWatcher<std::pair<bool, Packet>>(this);
-  connect(packetSendWatcher, &QFutureWatcher<std::pair<bool, Packet>>::finished,
-          this, &PacketCalcGUI::onPacketSendCompleted);
   
   // Setup client receive timer with longer interval to reduce load
   clientReceiveTimer = new QTimer(this);
@@ -97,11 +87,6 @@ PacketCalcGUI::~PacketCalcGUI()
     clientReceiveTimer->stop();
   }
   
-  // Cancel and wait for async operations
-  if (packetSendWatcher) {
-    packetSendWatcher->cancel();
-    packetSendWatcher->waitForFinished();
-  }
   
   if (interface) {
     delete interface;
@@ -360,33 +345,37 @@ void PacketCalcGUI::sendCustomPacket()
              .arg(packet.command, 2, 16, QChar('0'))
              .arg(packet.data_len));
 
-  // Start asynchronous packet sending with timeout
-  auto future = QtConcurrent::run([this, packet]() -> std::pair<bool, Packet> {
-    Packet response;
-    bool success;
+  // Blocking packet sending with 0.2s timeout
+  Packet response;
+  bool success = false;
+
+  // ボタンを無効化
+  ui->sendPacketButton->setEnabled(false);
+  
+  try {
     if (deviceRole == "client") {
       success = interface->sub(response);
     } else {
       success = interface->pub_sub(packet, response);
     }
-    return std::make_pair(success, response);
-  });
+  } catch (const std::exception& e) {
+    logMessage(QString("Packet send error: %1").arg(e.what()));
+    success = false;
+  }
 
-  packetSendWatcher->setFuture(future);
+  // Enable the button again
+  ui->sendPacketButton->setEnabled(true);
   
-  // Setup timeout timer for packet sending
-  QTimer::singleShot(2000, this, [this]() {
-    if (packetSendWatcher && !packetSendWatcher->isFinished()) {
-      packetSendWatcher->cancel();
-      setSendingState(false);
-      logMessage("Packet send operation timed out (2s)");
-      
-      // Update response display with timeout
-      Packet timeoutResponse;
-      timeoutResponse.is_valid = false;
-      updateResponseDisplay(timeoutResponse, false);
-    }
-  });
+  // Immediately process the result
+  setSendingState(false);
+  updateResponseDisplay(response, success);
+  
+  if (success && response.is_valid) {
+    logMessage(QString("Packet sent successfully - Response received with %1 bytes")
+               .arg(response.data_len));
+  } else {
+    logMessage("Packet sent but no valid response received (timeout or no client)");
+  }
 }
 
 void PacketCalcGUI::logMessage(const QString & message)
@@ -403,22 +392,6 @@ void PacketCalcGUI::logMessage(const QString & message)
   ui->logTextEdit->setTextCursor(cursor);
 }
 
-void PacketCalcGUI::onPacketSendCompleted()
-{
-  auto result = packetSendWatcher->result();
-  bool success = result.first;
-  Packet response = result.second;
-
-  setSendingState(false);
-  updateResponseDisplay(response, success);
-
-  if (success && response.is_valid) {
-    logMessage(QString("Packet sent successfully - Response received with %1 bytes")
-               .arg(response.data_len));
-  } else {
-    logMessage("Packet sent but no valid response received (timeout or no client)");
-  }
-}
 
 void PacketCalcGUI::updateResponseDisplay(const Packet & response, bool success)
 {
