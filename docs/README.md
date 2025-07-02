@@ -16,19 +16,19 @@ It is intended to replace the implementation of [h6x_serial_interface](https://g
 
 ## Protocol
 
-See [docs/protocol.md](docs/protocol.md) for the protocol specification.
+See [protocol.md](protocol.md) for the protocol specification.
 
 <br>
 
 ## Demo
 
-See [docs/demo.md](docs/demo.md) for a demo of the packet handler.
+See [demo.md](demo.md) for a demo of the packet handler.
 
 <br>
 
 ## Application development
 
-See [docs/application.md](docs/application.md) for application development.
+See [application.md](application.md) for application development.
 
 <br>
 
