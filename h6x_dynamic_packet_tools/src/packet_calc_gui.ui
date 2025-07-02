@@ -189,20 +189,27 @@
            </widget>
           </item>
           <item row="0" column="1">
+           <widget class="QLabel" name="responseClientIdLabel">
+            <property name="text">
+             <string>Client ID: N/A</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
            <widget class="QLabel" name="responseCrcLabel">
             <property name="text">
              <string>CRC: N/A</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="0" colspan="2">
+          <item row="1" column="0" colspan="3">
            <widget class="QLabel" name="responseDataLabel">
             <property name="text">
              <string>Data: N/A</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="0" colspan="2">
+          <item row="2" column="0" colspan="3">
            <widget class="QLabel" name="responseDataAsciiLabel">
             <property name="text">
              <string>Data (ASCII): N/A</string>
