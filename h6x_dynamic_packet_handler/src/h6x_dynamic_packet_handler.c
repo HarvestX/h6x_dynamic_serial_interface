@@ -36,7 +36,9 @@ bool packet_division(Packet * pkt, const char * data, const uint8_t recv_len)
     return false;
   }
 
-  if (recv_len < ADDITIONAL_PACKET_LENGTH + DATA_LENGTH_MIN || (data[0] != HEADER_HOST && data[0] != HEADER_CLIENT)) {
+  if (recv_len < ADDITIONAL_PACKET_LENGTH + DATA_LENGTH_MIN ||
+    (data[0] != HEADER_HOST && data[0] != HEADER_CLIENT))
+  {
     pkt->is_valid = false;
     return false;
   }
