@@ -136,7 +136,8 @@ uint8_t get_serial_data(char * input_buf, const int max_len, serial_getchar_fn_t
 
     if (!start_bit && c == '#') {
       start_bit = true;
-      idx = 1;
+      idx = 0;
+      input_buf[idx++] = c;
     } else if (start_bit && c >= 0) {
       input_buf[idx++] = c;
       if (idx == 4) {

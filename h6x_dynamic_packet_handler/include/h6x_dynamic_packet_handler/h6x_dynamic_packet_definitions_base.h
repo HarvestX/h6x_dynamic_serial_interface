@@ -22,7 +22,8 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
-#define DATA_LENGTH_MAX 251 // Maximum data_len of data in a packet
+#define PACKET_LENGTH_MAX 256
+#define DATA_LENGTH_MAX 251
 #define DATA_LENGTH_MIN 1
 #define ADDITIONAL_PACKET_LENGTH 5 // Additional bytes for header, client_id, command/status, data_len, crc
 

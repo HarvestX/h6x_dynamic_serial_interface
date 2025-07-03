@@ -19,7 +19,6 @@ set(CMAKE_AUTORCC ON)
 
 ament_auto_add_executable(packet_calc_gui
     src/packet_calc_gui.cpp
-    src/serial_interface.cpp
     src/packet_calc_gui.ui
 )
 
