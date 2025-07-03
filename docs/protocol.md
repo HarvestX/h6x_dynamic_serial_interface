@@ -67,8 +67,6 @@ uint8_t crc8_calculate(const uint8_t * input, const uint16_t len)
 
 These commands are predefined and used for basic operations. Each command has a unique identifier.
 
-These packets use 8 bytes of static data.
-
 | Command | Value | Description |
 |---------|-------|-------------|
 | `CMD_PING` | 0 | Ping/keep-alive command |

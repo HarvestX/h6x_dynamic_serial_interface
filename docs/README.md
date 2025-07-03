@@ -1,4 +1,4 @@
-# h6x-dyanmic-serial-interface
+# h6x-dynamic-serial-interface
 
 This package is a packet handler that realizes variable-length data transmission and reception.
 
