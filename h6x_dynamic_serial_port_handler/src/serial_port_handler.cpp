@@ -1,18 +1,29 @@
-/*
- * Copyright (c) 2025 HarvestX Inc.
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+// Copyright 2025 HarvestX Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-
-#include "serial_interface.hpp"
+#include "h6x_dynamic_serial_port_handler/serial_port_handler.hpp"
+#include "h6x_dynamic_serial_port_handler/libserial_helper.hpp"
 #include <chrono>
 #include <thread>
 
-serialInterface::serialInterface()
+namespace h6x_dynamic_serial_port_handler
+{
+
+SerialPortHandler::SerialPortHandler()
 : running(false), timer_interval_ms(1000) {}
 
-serialInterface::~serialInterface()
+SerialPortHandler::~SerialPortHandler()
 {
   std::lock_guard<std::mutex> lock(serial_mutex);
   running = false;
@@ -29,22 +40,21 @@ serialInterface::~serialInterface()
     }
   }
 
-  std::cout << "Serial interface destroyed" << std::endl;
+  std::cout << "Serial port handler destroyed" << std::endl;
 }
 
-bool serialInterface::init_serial(const std::string & port, const int baudrate = 9600)
+bool SerialPortHandler::init_serial(const std::string & port, const int baudrate = 9600)
 {
   std::lock_guard<std::mutex> lock(serial_mutex);
 
   try {
-    // Clean up existing connection if any
     if (serial_port && serial_port->IsOpen()) {
       serial_port->Close();
     }
 
     serial_port = std::make_unique<LibSerial::SerialPort>();
     serial_port->Open(port);
-    serial_port->SetBaudRate(LibSerial::BaudRate::BAUD_9600);
+    serial_port->SetBaudRate(getBaudrate(baudrate));
     serial_port->SetCharacterSize(LibSerial::CharacterSize::CHAR_SIZE_8);
     serial_port->SetFlowControl(LibSerial::FlowControl::FLOW_CONTROL_NONE);
     serial_port->SetParity(LibSerial::Parity::PARITY_NONE);
@@ -61,7 +71,7 @@ bool serialInterface::init_serial(const std::string & port, const int baudrate =
   }
 }
 
-bool serialInterface::put_serial_data(const Packet * pkt)
+bool SerialPortHandler::put_serial_data(const Packet * pkt)
 {
   if (!serial_port || !pkt) {return false;}
 
@@ -73,7 +83,7 @@ bool serialInterface::put_serial_data(const Packet * pkt)
 
   size_t packet_length = pkt->data_len + ADDITIONAL_PACKET_LENGTH;
 
-  if (packet_length > 255) {
+  if (packet_length >= PACKET_LENGTH_MAX) {
     std::cout << "Packet too large: " << packet_length << std::endl;
     return false;
   }
@@ -91,7 +101,7 @@ bool serialInterface::put_serial_data(const Packet * pkt)
   }
 }
 
-bool serialInterface::get_serial_data(Packet * recv_pkt, const uint8_t target_header)
+bool SerialPortHandler::get_serial_data(Packet * recv_pkt, const uint8_t target_header)
 {
   if (!serial_port || !recv_pkt) {return false;}
 
@@ -125,17 +135,15 @@ bool serialInterface::get_serial_data(Packet * recv_pkt, const uint8_t target_he
       }
     }
 
-
     if (header_search_count >= MAX_HEADER_SEARCH) {
       std::cout << "Header search exceeded maximum attempts" << std::endl;
       return false;
     }
 
-    // Read the remaining header bytes (client_id, command, data_length)
     uint8_t packet_length = 0;
     try {
       for (int i = 1; i < 4; i++) {
-        if (response_len >= 255) {
+        if (response_len > PACKET_LENGTH_MAX) {
           std::cout << "Buffer overflow protection" << std::endl;
           return false;
         }
@@ -152,13 +160,11 @@ bool serialInterface::get_serial_data(Packet * recv_pkt, const uint8_t target_he
       return false;
     }
 
-    // Validate packet length
-    if (packet_length > 200 || response_len + packet_length + 2 > 255) {
+    if (packet_length > DATA_LENGTH_MAX) {
       std::cout << "Invalid packet length: " << static_cast<int>(packet_length) << std::endl;
       return false;
     }
 
-    // Read data bytes
     try {
       for (size_t i = 0; i < packet_length; i++) {
         serial_port->ReadByte(c, 200);
@@ -172,7 +178,6 @@ bool serialInterface::get_serial_data(Packet * recv_pkt, const uint8_t target_he
       return false;
     }
 
-    // Read the CRC byte and end character
     try {
       serial_port->ReadByte(c, 200);
       response[response_len++] = c;
@@ -187,7 +192,6 @@ bool serialInterface::get_serial_data(Packet * recv_pkt, const uint8_t target_he
     std::cout << std::endl;
     print_packet_bytes(response, response_len);
 
-    // Initialize packet structure
     memset(recv_pkt, 0, sizeof(Packet));
 
     if (packet_division(recv_pkt, response, response_len)) {
@@ -211,7 +215,7 @@ bool serialInterface::get_serial_data(Packet * recv_pkt, const uint8_t target_he
   }
 }
 
-void serialInterface::print_packet_bytes(const char * packet, size_t length)
+void SerialPortHandler::print_packet_bytes(const char * packet, size_t length)
 {
   std::cout << "->: ";
   for (size_t i = 0; i < length; i++) {
@@ -221,12 +225,12 @@ void serialInterface::print_packet_bytes(const char * packet, size_t length)
   std::cout << std::endl;
 }
 
-void serialInterface::set_data_callback(std::function<void(const Packet &)> callback)
+void SerialPortHandler::set_data_callback(std::function<void(const Packet &)> callback)
 {
   data_callback = callback;
 }
 
-bool serialInterface::pub_sub(const Packet & pkt, Packet & recv_pkt)
+bool SerialPortHandler::pub_sub(const Packet & pkt, Packet & recv_pkt)
 {
   std::lock_guard<std::mutex> lock(serial_mutex);
 
@@ -253,48 +257,4 @@ bool serialInterface::pub_sub(const Packet & pkt, Packet & recv_pkt)
   }
 }
 
-bool serialInterface::sub(Packet & recv_pkt)
-{
-  std::lock_guard<std::mutex> lock(serial_mutex);
-
-  if (!serial_port) {
-    std::cout << "Serial port not initialized" << std::endl;
-    return false;
-  }
-
-  memset(&recv_pkt, 0, sizeof(Packet));
-  recv_pkt.is_valid = false;
-
-  if (get_serial_data(&recv_pkt, 0x23)) {
-    if (data_callback) {
-      uint8_t callback_data[6] = {0x24, 0x01, 0x00, 0x01, 0x00, 0x00};
-      uint8_t crc_calc = crc8_calculate(callback_data, sizeof(callback_data) - 1);
-      callback_data[5] = crc_calc;
-      try {
-        serial_port->Write(
-          std::string(
-            reinterpret_cast<const char *>(callback_data),
-            sizeof(callback_data)));
-      } catch (const std::exception & e) {
-        std::cerr << "Error sending callback data: " << e.what() << std::endl;
-      }
-
-      data_callback(recv_pkt);
-    }
-    return true;
-  } else {
-    return false;
-  }
-}
-
-// === Recived packet example ===
-// void serialInterface::get_status(
-//     Packet& recv_pkt,
-//     const uint8_t client_id,
-//     const uint8_t command) {
-//     Packet send_pkt = init_packet();
-//     send_pkt.mode = SERIAL_MODE_HOST;
-//     send_pkt.client_id = client_id;
-//     send_pkt.command = command;
-//     pub_sub(send_pkt, recv_pkt);
-// }
+}  // namespace h6x_dynamic_serial_port_handler
