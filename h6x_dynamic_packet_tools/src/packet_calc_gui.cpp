@@ -18,7 +18,7 @@
 #include "h6x_dynamic_packet_handler/h6x_dynamic_packet_definitions_base.h"
 #include "h6x_dynamic_packet_handler/h6x_dynamic_packet_big_endian.h"
 #include "h6x_dynamic_packet_handler/h6x_dynamic_packet_crc8.h"
-#include "serial_interface.hpp"
+#include "h6x_dynamic_serial_port_handler/serial_port_handler.hpp"
 
 class PacketCalcGUI : public QMainWindow
 {
@@ -54,7 +54,7 @@ private:
   Ui::PacketCalcGUI * ui;
 
   // Communication
-  serialInterface * interface;
+  h6x_dynamic_serial_port_handler::SerialPortHandler * interface;
   bool isConnected;
   bool isSending;
   QString commandLinePort;
@@ -70,7 +70,7 @@ PacketCalcGUI::PacketCalcGUI(
 {
   setupUI();
 
-  interface = new serialInterface();
+  interface = new h6x_dynamic_serial_port_handler::SerialPortHandler();
 
 
   // Setup client receive timer with longer interval to reduce load
