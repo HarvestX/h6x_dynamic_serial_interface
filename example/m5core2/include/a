@@ -1,6 +1,0 @@
-#pragma once
-extern "C" {
-  #include "../../../h6x_dynamic_packet_handler/include/h6x_dynamic_packet_handler/h6x_dynamic_packet_handler.h"
-  #include "../../../h6x_dynamic_packet_handler/include/h6x_dynamic_packet_handler/h6x_dynamic_packet_crc8.h"
-  #include "../../../h6x_dynamic_packet_handler/include/h6x_dynamic_packet_handler/h6x_dynamic_packet_definitions_base.h"
-}
