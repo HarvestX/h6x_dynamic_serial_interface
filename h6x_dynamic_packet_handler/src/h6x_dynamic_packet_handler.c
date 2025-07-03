@@ -36,6 +36,11 @@ bool packet_division(Packet * pkt, const char * data, const uint8_t recv_len)
     return false;
   }
 
+  if (recv_len < ADDITIONAL_PACKET_LENGTH + DATA_LENGTH_MIN || (data[0] != HEADER_HOST && data[0] != HEADER_CLIENT)) {
+    pkt->is_valid = false;
+    return false;
+  }
+
   pkt->data_len = data[3];
   if (recv_len < pkt->data_len + ADDITIONAL_PACKET_LENGTH || pkt->data_len > DATA_LENGTH_MAX) {
     pkt->is_valid = false;
@@ -84,6 +89,9 @@ bool create_packet(const Packet * pkt, char * send_packet)
   send_packet[1] = pkt->client_id;
   send_packet[2] = (pkt->mode == SERIAL_MODE_HOST) ? pkt->command : pkt->status;
   send_packet[3] = pkt->data_len;
+  if (pkt->data_len > DATA_LENGTH_MAX || pkt->data_len < DATA_LENGTH_MIN) {
+    return false;
+  }
   memcpy(send_packet + 4, pkt->data, pkt->data_len);
   send_packet[pkt->data_len + 4] = crc8_calculate((const uint8_t *)send_packet, pkt->data_len + 4);
 
@@ -93,18 +101,6 @@ bool create_packet(const Packet * pkt, char * send_packet)
 Packet get_received_packet(const char * input, const int32_t input_len, const uint8_t client_id)
 {
   Packet r_pkt = init_packet();
-
-  if (input_len < ADDITIONAL_PACKET_LENGTH + 1 || input == NULL) {
-    r_pkt.is_valid = false;
-    return r_pkt;
-  }
-
-  if (input[0] != HEADER_HOST && input[0] != HEADER_CLIENT) {
-    r_pkt.is_valid = false;
-    return r_pkt;
-  }
-
-  r_pkt.mode = (input[0] == HEADER_HOST) ? SERIAL_MODE_HOST : SERIAL_MODE_CLIENT;
 
   if (!packet_division(&r_pkt, input, input_len)) {
     r_pkt.is_valid = false;
