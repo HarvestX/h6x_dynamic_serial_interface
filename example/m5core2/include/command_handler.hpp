@@ -5,7 +5,8 @@
 #include <stdint.h>
 #include <math.h>
 #include "protocol_definitions.h"
-#include "h6x_dynamic_packet_crc8.h"
+#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_crc8.h"
+#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_definitions_base.h"
 #include "imu_filter.h"
 #include "cpu_usage_handler.hpp"
 
@@ -229,13 +230,20 @@ void command_handler(const uint8_t & command, Packet & s_pkt)
       }
   }
 
+  // uint8_t response[3 + s_pkt.data_len];
+  // response[0] = s_pkt.header;
+  // response[1] = s_pkt.target_id;
+  // response[2] = s_pkt.status;
+  // response[3] = s_pkt.data_len;
+  // memcpy(response + 4, s_pkt.data, s_pkt.data_len);
+  // s_pkt.crc = crc8_calculate(response, 3 + s_pkt.data_len);
   uint8_t response[3 + s_pkt.data_len];
-  response[0] = s_pkt.header;
-  response[1] = s_pkt.target_id;
-  response[2] = s_pkt.status;
-  response[3] = s_pkt.data_len;
-  memcpy(response + 4, s_pkt.data, s_pkt.data_len);
+  response[0] = s_pkt.client_id;     // 旧 header 相当を client_id に変更
+  response[1] = s_pkt.status;
+  response[2] = s_pkt.data_len;
+  memcpy(response + 3, s_pkt.data, s_pkt.data_len);
   s_pkt.crc = crc8_calculate(response, 3 + s_pkt.data_len);
+
 }
 
 #endif

@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <M5Core2.h>
-#include "packet_handler.h"
+#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_handler.h"
 #include "command_handler.hpp"
 #include "serial_handler.hpp"
 #include "cpu_usage_handler.hpp"
@@ -87,7 +87,7 @@ void setup()
   M5.Lcd.setTextColor(WHITE, BLACK);
   M5.Lcd.fillScreen(BLACK);
   Serial.begin(115200); // PC <--> M5Core2
-  Serial1.begin(115200, SERIAL_8N1, RX_PORTA, TX_PORTA); // M5Core2 <--> M5Core2
+  Serial.begin(115200, SERIAL_8N1, RX_PORTA, TX_PORTA); // M5Core2 <--> M5Core2
   startCPUUsageMonitor();
   drawMenu(selected_index);
 }
@@ -119,8 +119,8 @@ void loop()
     sendSelectedCommand();
   }
 
-  if (Serial1.available() >= DATA_LEN) {
-    if (!serial_read(pkt_recv, SERIAL_MODE_PRIMARY, 0x01)) {
+  if (Serial.available() >= DATA_LEN) {
+    if (!serial_read(pkt_recv, SERIAL_MODE_HOST, 0x01)) {
       M5.Lcd.setCursor(0, 0);
       M5.Lcd.printf("Failed read\n");
       return;
