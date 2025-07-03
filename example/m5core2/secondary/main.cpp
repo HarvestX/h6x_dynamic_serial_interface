@@ -21,14 +21,14 @@ void setup()
   M5.Lcd.setTextColor(GREEN, BLACK);
   M5.Lcd.setTextSize(2);
   Serial.begin(115200); // PC <--> M5Core2
-  Serial.begin(115200, SERIAL_8N1, RX_PORTA, TX_PORTA); // M5Core2 <--> M5Core2
+  Serial1.begin(115200, SERIAL_8N1, RX_PORTA, TX_PORTA); // M5Core2 <--> M5Core2
   unsigned long start_tick = millis();
 }
 
 void loop()
 {
   memset(&pkt_recv, 0, sizeof(pkt_recv));
-  if (Serial.available() >= DATA_LEN) {
+  if (Serial1.available() >= DATA_LEN) {
     if (!serial_read(pkt_recv, SERIAL_MODE_CLIENT, ONW_ID)) {
       M5.Lcd.setCursor(0, 100);
       M5.Lcd.printf("Failed read\n");
