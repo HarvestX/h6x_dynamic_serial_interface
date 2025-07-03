@@ -44,7 +44,6 @@ public:
   void print_packet_bytes(const char *, size_t);
   void set_data_callback(std::function<void(const Packet &)>);
   bool pub_sub(const Packet &, Packet &);
-  bool sub(Packet &);
 };
 
 } // namespace h6x_dynamic_serial_port_handler

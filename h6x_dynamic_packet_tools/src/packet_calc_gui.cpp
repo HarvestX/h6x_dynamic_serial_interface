@@ -361,16 +361,21 @@ void PacketCalcGUI::sendCustomPacket()
     .arg(packet.command, 2, 16, QChar('0'))
     .arg(packet.data_len));
 
-  // Blocking packet sending with 0.2s timeout
   Packet response;
   bool success = false;
-
-  // ボタンを無効化
   ui->sendPacketButton->setEnabled(false);
 
   try {
     if (deviceRole == "client") {
-      success = interface->sub(response);
+      Packet recv_pkt;
+      Packet send_pkt;
+      success = interface->get_serial_data(&recv_pkt, 0x23);
+      if (success) {
+        send_pkt = packet;
+        send_pkt.mode = SERIAL_MODE_CLIENT;
+        success = interface->put_serial_data(&send_pkt);
+      }
+
     } else {
       success = interface->pub_sub(packet, response);
     }
@@ -476,12 +481,19 @@ void PacketCalcGUI::onClientReceiveTimer()
     return;
   }
 
-  // Simple synchronous receive - no async complications
   Packet response;
   bool success = false;
 
   try {
-    success = interface->sub(response);
+    Packet recv_pkt;
+    success = interface->get_serial_data(&recv_pkt, 0x23);
+    if (success) {
+      response = recv_pkt;
+      response.mode = SERIAL_MODE_CLIENT;
+      success = interface->put_serial_data(&response);
+    } else {
+      return;
+    }
   } catch (const std::exception & e) {
     logMessage(QString("Client receive error: %1").arg(e.what()));
     return;

@@ -249,38 +249,4 @@ bool SerialPortHandler::pub_sub(const Packet & pkt, Packet & recv_pkt)
   }
 }
 
-bool SerialPortHandler::sub(Packet & recv_pkt)
-{
-  std::lock_guard<std::mutex> lock(serial_mutex);
-
-  if (!serial_port) {
-    std::cout << "Serial port not initialized" << std::endl;
-    return false;
-  }
-
-  memset(&recv_pkt, 0, sizeof(Packet));
-  recv_pkt.is_valid = false;
-
-  if (get_serial_data(&recv_pkt, 0x23)) {
-    if (data_callback) {
-      uint8_t callback_data[6] = {0x24, 0x01, 0x00, 0x01, 0x00, 0x00};
-      uint8_t crc_calc = crc8_calculate(callback_data, sizeof(callback_data) - 1);
-      callback_data[5] = crc_calc;
-      try {
-        serial_port->Write(
-          std::string(
-            reinterpret_cast<const char *>(callback_data),
-            sizeof(callback_data)));
-      } catch (const std::exception & e) {
-        std::cerr << "Error sending callback data: " << e.what() << std::endl;
-      }
-
-      data_callback(recv_pkt);
-    }
-    return true;
-  } else {
-    return false;
-  }
-}
-
 } // namespace h6x_dynamic_serial_port_handler
