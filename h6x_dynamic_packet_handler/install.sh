@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_PREFIX="/usr/local"
 UNINSTALL_MODE=false
 
-PLATFORMS=("arm-none-eabi" "gcc-x86_64")
+PLATFORMS=("arm-none-eabi" "arm-none-eabi-stm32f4" "gcc-x86_64")
 
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root or with sudo"
@@ -67,9 +67,10 @@ if [[ "$SHOW_HELP" == true ]]; then
     done
     echo ""
     echo "Examples:"
-    echo "  $0 /usr/local                        Install all platforms"
-    echo "  $0 /usr/local --platforms gcc-x86_64 Install only gcc-x86_64"
-    echo "  $0 /usr/local uninstall              Uninstall from /usr/local"
+    echo "  $0 /usr/local                               Install all platforms"
+    echo "  $0 /usr/local --platforms gcc-x86_64        Install only gcc-x86_64"
+    echo "  $0 /usr/local --platforms arm-none-eabi-stm32f4 Install only STM32F4 with FPU"
+    echo "  $0 /usr/local uninstall                     Uninstall from /usr/local"
     exit 0
 fi
 
@@ -103,6 +104,12 @@ uninstall_library() {
                 if [ -d "${LIB_DIR}/h6x_dynamic_packet_handler/arm-none-eabi" ]; then
                     echo "Removing arm-none-eabi library directory..."
                     rm -rf "${LIB_DIR}/h6x_dynamic_packet_handler/arm-none-eabi"
+                fi
+                ;;
+            "arm-none-eabi-stm32f4")
+                if [ -f "${LIB_DIR}/arm-none-eabi/libh6x_dynamic_packet_handler_stm32f4.a" ]; then
+                    echo "Removing arm-none-eabi-stm32f4 library file..."
+                    rm -f "${LIB_DIR}/arm-none-eabi/libh6x_dynamic_packet_handler_stm32f4.a"
                 fi
                 ;;
             "gcc-x86_64")
@@ -155,13 +162,24 @@ for platform in "${BUILD_PLATFORMS[@]}"; do
     echo "Building for platform: $platform"
     echo "================================"
     
-    if [[ ! -d "${SCRIPT_DIR}/install_scripts/${platform}" ]]; then
-        echo "Warning: Platform ${platform} not found, skipping..."
-        continue
-    fi
-    
-    cd "${SCRIPT_DIR}/install_scripts/${platform}"
-    ./build.sh "${INSTALL_PREFIX}"
+    case $platform in
+        "arm-none-eabi-stm32f4")
+            if [[ ! -d "${SCRIPT_DIR}/install_scripts/arm-none-eabi" ]]; then
+                echo "Warning: arm-none-eabi platform not found, skipping..."
+                continue
+            fi
+            cd "${SCRIPT_DIR}/install_scripts/arm-none-eabi"
+            ./build.sh "${INSTALL_PREFIX}" "stm32f4"
+            ;;
+        *)
+            if [[ ! -d "${SCRIPT_DIR}/install_scripts/${platform}" ]]; then
+                echo "Warning: Platform ${platform} not found, skipping..."
+                continue
+            fi
+            cd "${SCRIPT_DIR}/install_scripts/${platform}"
+            ./build.sh "${INSTALL_PREFIX}"
+            ;;
+    esac
 done
 
 # TODO : Install CMake config file
@@ -178,7 +196,10 @@ echo "Libraries installed to:"
 for platform in "${BUILD_PLATFORMS[@]}"; do
     case $platform in
         "arm-none-eabi")
-            echo "  - ${LIB_DIR}/h6x_dynamic_packet_handler/arm-none-eabi/libh6x_dynamic_packet_handler.a (static)"
+            echo "  - ${LIB_DIR}/arm-none-eabi/libh6x_dynamic_packet_handler.a (static)"
+            ;;
+        "arm-none-eabi-stm32f4")
+            echo "  - ${LIB_DIR}/arm-none-eabi/libh6x_dynamic_packet_handler_stm32f4.a (static)"
             ;;
         "gcc-x86_64")
             echo "  - ${LIB_DIR}/x86_64-linux-gnu/libh6x_dynamic_packet_handler.so (shared)"

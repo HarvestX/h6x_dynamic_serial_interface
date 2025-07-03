@@ -11,6 +11,25 @@ BUILD_DIR = build
 LIB_DIR = lib/arm-none-eabi
 INSTALL_PREFIX = /usr/local
 
+STM32F4 ?= 0
+
+ifeq ($(STM32F4),1)
+CFLAGS = -mcpu=cortex-m4 \
+         -mthumb \
+         -mfloat-abi=hard \
+         -mfpu=fpv4-sp-d16 \
+         -Wall \
+         -Wextra \
+         -Wpedantic \
+         -Os \
+         -ffunction-sections \
+         -fdata-sections \
+         -I$(INC_DIR) \
+         -specs=nosys.specs \
+         -nostartfiles \
+         -nodefaultlibs \
+         -nostdlib
+else
 CFLAGS = -mcpu=cortex-m0plus \
          -mthumb \
          -mfloat-abi=soft \
@@ -25,6 +44,7 @@ CFLAGS = -mcpu=cortex-m0plus \
          -nostartfiles \
          -nodefaultlibs \
          -nostdlib
+endif
 
 DEBUG_CFLAGS = -g -O0
 
@@ -57,6 +77,17 @@ debug: $(LIB_TARGET)
 release: CFLAGS += $(RELEASE_CFLAGS)
 release: $(LIB_TARGET)
 
+stm32f4: STM32F4=1
+stm32f4: $(LIB_TARGET)
+
+stm32f4-debug: STM32F4=1
+stm32f4-debug: CFLAGS += $(DEBUG_CFLAGS)
+stm32f4-debug: $(LIB_TARGET)
+
+stm32f4-release: STM32F4=1
+stm32f4-release: CFLAGS += $(RELEASE_CFLAGS)
+stm32f4-release: $(LIB_TARGET)
+
 clean:
 	rm -rf $(BUILD_DIR)
 
@@ -81,4 +112,4 @@ info:
 	@echo "OBJECTS: $(OBJECTS)"
 	@echo "LIB_TARGET: $(LIB_TARGET)"
 
-.PHONY: all debug release clean install install-local uninstall info
+.PHONY: all debug release stm32f4 stm32f4-debug stm32f4-release clean install install-local uninstall info
