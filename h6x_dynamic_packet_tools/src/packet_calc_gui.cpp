@@ -252,7 +252,7 @@ std::vector<int16_t> PacketCalcGUI::parsePacketData(const QString & text)
     QString trimmed = value.trimmed();
     bool ok;
     int16_t num = trimmed.toShort(&ok);
-    if (ok && num >= -1 && num <= 255) {
+    if (ok && num >= -1 && num < PACKET_LENGTH_MAX) {
       data.push_back(num);
       if (num == -1) {
         break;

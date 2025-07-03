@@ -75,7 +75,7 @@ bool SerialPortHandler::put_serial_data(const Packet * pkt)
 
   size_t packet_length = pkt->data_len + ADDITIONAL_PACKET_LENGTH;
 
-  if (packet_length > 255) {
+  if (packet_length >= PACKET_LENGTH_MAX) {
     std::cout << "Packet too large: " << packet_length << std::endl;
     return false;
   }
@@ -135,7 +135,7 @@ bool SerialPortHandler::get_serial_data(Packet * recv_pkt, const uint8_t target_
     uint8_t packet_length = 0;
     try {
       for (int i = 1; i < 4; i++) {
-        if (response_len >= 255) {
+        if (response_len > PACKET_LENGTH_MAX) {
           std::cout << "Buffer overflow protection" << std::endl;
           return false;
         }
@@ -152,7 +152,7 @@ bool SerialPortHandler::get_serial_data(Packet * recv_pkt, const uint8_t target_
       return false;
     }
 
-    if (packet_length > 200 || response_len + packet_length + 2 > 255) {
+    if (packet_length > DATA_LENGTH_MAX) {
       std::cout << "Invalid packet length: " << static_cast<int>(packet_length) << std::endl;
       return false;
     }
