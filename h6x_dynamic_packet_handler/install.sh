@@ -9,16 +9,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_PREFIX="/usr/local"
 UNINSTALL_MODE=false
 
-# Available platforms
 PLATFORMS=("arm-none-eabi" "gcc-x86_64")
 
-# Check if running as root or with sudo
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root or with sudo"
     exit 1
 fi
 
-# Parse command line arguments
 BUILD_PLATFORMS=()
 SHOW_HELP=false
 
@@ -45,7 +42,6 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         *)
-            # This is the install prefix
             if [[ -z "$INSTALL_PREFIX_SET" ]]; then
                 INSTALL_PREFIX="$1"
                 INSTALL_PREFIX_SET=true
@@ -77,35 +73,30 @@ if [[ "$SHOW_HELP" == true ]]; then
     exit 0
 fi
 
-# Update directories with correct prefix
 INCLUDE_DIR="${INSTALL_PREFIX}/include"
 LIB_DIR="${INSTALL_PREFIX}/lib"
 CMAKE_DIR="${INSTALL_PREFIX}/lib/cmake/h6x_dynamic_packet_handler"
 
-# Check if install prefix directory exists
 if [[ ! -d "${INSTALL_PREFIX}" ]]; then
     echo "Error: INSTALL_PREFIX '${INSTALL_PREFIX}' is not a directory."
     echo "Please provide a valid directory path."
     exit 1
 fi
- function
+
 uninstall_library() {
     echo "h6x_dynamic_packet_handler uninstall script"
     echo "Uninstalling from: ${INSTALL_PREFIX}"
     echo ""
     
-    # Remove header files
     if [ -d "${INCLUDE_DIR}/h6x_dynamic_packet_handler" ]; then
         echo "Removing header files from ${INCLUDE_DIR}/h6x_dynamic_packet_handler..."
         rm -rf "${INCLUDE_DIR}/h6x_dynamic_packet_handler"
     fi
     
-    # Remove library files
     echo "Removing library files..."
     rm -f "${LIB_DIR}"/*/libh6x_dynamic_packet_handler.*
     rm -f "${LIB_DIR}"/libh6x_dynamic_packet_handler.*
     
-    # Remove platform-specific directories
     for platform in "${PLATFORMS[@]}"; do
         case $platform in
             "arm-none-eabi")
@@ -123,18 +114,15 @@ uninstall_library() {
         esac
     done
     
-    # Remove empty h6x_dynamic_packet_handler directory if it exists
     if [ -d "${LIB_DIR}/h6x_dynamic_packet_handler" ]; then
         rmdir "${LIB_DIR}/h6x_dynamic_packet_handler" 2>/dev/null || true
     fi
     
-    # Remove CMake config files
     if [ -d "${CMAKE_DIR}" ]; then
         echo "Removing CMake config files from ${CMAKE_DIR}..."
         rm -rf "${CMAKE_DIR}"
     fi
     
-    # Update library cache
     echo "Updating library cache..."
     ldconfig
     
@@ -143,12 +131,10 @@ uninstall_library() {
     exit 0
 }
 
-# If uninstall mode, run uninstall function
 if [[ "$UNINSTALL_MODE" == true ]]; then
     uninstall_library
 fi
 
-# If no platforms specified, build all
 if [[ ${#BUILD_PLATFORMS[@]} -eq 0 ]]; then
     BUILD_PLATFORMS=("${PLATFORMS[@]}")
 fi
@@ -157,17 +143,13 @@ echo "h6x_dynamic_packet_handler multi-platform installation script"
 echo "Installing to: ${INSTALL_PREFIX}"
 echo ""
 
-# Create directories
 mkdir -p "${INCLUDE_DIR}/h6x_dynamic_packet_handler"
 mkdir -p "${LIB_DIR}"
 mkdir -p "${CMAKE_DIR}"
 
-
-# Install header files
 echo "Installing header files..."
 cp -r "${SCRIPT_DIR}/include/h6x_dynamic_packet_handler"/* "${INCLUDE_DIR}/h6x_dynamic_packet_handler/"
 
-# Build for each platform
 for platform in "${BUILD_PLATFORMS[@]}"; do
     echo ""
     echo "Building for platform: $platform"
@@ -178,7 +160,6 @@ for platform in "${BUILD_PLATFORMS[@]}"; do
         continue
     fi
     
-    # Run platform-specific build script
     cd "${SCRIPT_DIR}/install_scripts/${platform}"
     ./build.sh "${INSTALL_PREFIX}"
 done

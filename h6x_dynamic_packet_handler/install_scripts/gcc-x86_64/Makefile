@@ -1,6 +1,3 @@
-# Makefile for h6x_dynamic_packet_handler x86_64 Linux build
-
-# Compiler and tools
 CC = gcc
 AR = ar
 OBJCOPY = objcopy
@@ -14,7 +11,6 @@ BUILD_DIR = build
 LIB_DIR = lib/x86_64-linux-gnu
 INSTALL_PREFIX = /usr/local
 
-# Compiler flags for x86_64 Linux
 CFLAGS = -Wall \
          -Wextra \
          -Wpedantic \
@@ -22,10 +18,8 @@ CFLAGS = -Wall \
          -I$(INC_DIR)
 
 DEBUG_CFLAGS = -g -O0
-
 RELEASE_CFLAGS = -O2 -DNDEBUG
 
-# Linker flags for shared library
 LDFLAGS = -shared -Wl,-soname,lib$(PROJECT).so.1
 
 SOURCES = $(SRC_DIR)/h6x_dynamic_packet_crc8.c \
@@ -47,7 +41,6 @@ $(BUILD_DIR):
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Create shared library
 $(SHARED_LIB): $(OBJECTS)
 	$(CC) $(LDFLAGS) -o $@ $^
 	cd $(BUILD_DIR) && ln -sf lib$(PROJECT).so.$(VERSION) lib$(PROJECT).so.1
@@ -62,7 +55,7 @@ release: $(SHARED_LIB)
 
 clean:
 	rm -rf $(BUILD_DIR)
- and headers
+
 install: $(SHARED_LIB)
 	mkdir -p $(INSTALL_PREFIX)/$(LIB_DIR)
 	mkdir -p $(INSTALL_PREFIX)/include/h6x_dynamic_packet_handler
