@@ -75,8 +75,10 @@ ros2 run h6x_dynamic_packet_tools packet_calc_gui --ros-args -p role:="host" -p 
 In another terminal, launch the client instance:
 
 ```bash
-cd h6x_dynamic_packet_tools/build
-./packet_calc_gui --ros-args -p role:="client" -p port:="/dev/pts/3"
+cd ~/ros2_ws/
+source install/setup.bash
+
+ros2 run h6x_dynamic_packet_tools packet_calc_gui --ros-args -p role:="client" -p port:="/dev/pts/3"
 ```
 
 **Configuration:**
