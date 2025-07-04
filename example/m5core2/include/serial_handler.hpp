@@ -8,6 +8,9 @@
 #include "command_handler.hpp"
 #include "cpu_usage_handler.hpp"
 
+#define CRC_LENGTH 1
+#define BASE_PACKET_LENGTH 4
+
 
 bool serial_read(Packet & pkt, const uint8_t mode, const uint8_t own_id)
 {
@@ -39,15 +42,20 @@ bool serial_read(Packet & pkt, const uint8_t mode, const uint8_t own_id)
   char data[256] = {header};
   int read_data_len = 1;
   int max_len = sizeof(data);
+  int data_len = 0;
 
   while (read_data_len < max_len) {
     while (!Serial.available()) {}
     int byte = Serial.read();
     if (byte == -1) {continue;}
-
     data[read_data_len++] = static_cast<char>(byte);
 
-    if (byte == '\r') {break;} // TODO : update serial_handler
+    // data length check
+    if (read_data_len == BASE_PACKET_LENGTH) {
+      data_len += static_cast<uint8_t>(byte) + BASE_PACKET_LENGTH + CRC_LENGTH;
+    }
+
+    if (read_data_len == data_len) {break;}
   }
   packet_division(&pkt, data, read_data_len);
 
@@ -67,7 +75,6 @@ bool serial_read(Packet & pkt, const uint8_t mode, const uint8_t own_id)
   // Debug print received data to M5 LCD
   M5.Lcd.setCursor(0, 0);
   M5.Lcd.printf("=== RECV ===\n");
-  // M5.Lcd.printf("header: %02X\n", pkt.header);
   M5.Lcd.printf("client_id: %02X\n", pkt.client_id);
   M5.Lcd.printf("command: %02X\n", pkt.command);
   M5.Lcd.printf("data_len: %02X\n", pkt.data_len);
@@ -77,7 +84,6 @@ bool serial_read(Packet & pkt, const uint8_t mode, const uint8_t own_id)
   }
   M5.Lcd.println();
   M5.Lcd.printf("crc: %02X\n", pkt.crc);
-  // M5.Lcd.printf("footer: %02X\n", pkt.footer);
   M5.Lcd.println();
 
   return true;
@@ -93,6 +99,7 @@ bool serial_write(Packet & pkt)
   // Debug print sent data to M5 LCD
   M5.Lcd.printf("=== SEND ===\n");
   M5.Lcd.printf("send_data len: %d\n", pkt.data_len);
+  M5.Lcd.printf("client_id: %02X\n", pkt.client_id);
   for (int i = 0; i < pkt.data_len + ADDITIONAL_PACKET_LENGTH; ++i) {
     M5.Lcd.printf("%02X ", send_packet[i]);
   }

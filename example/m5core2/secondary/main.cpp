@@ -28,13 +28,15 @@ void setup()
 void loop()
 {
   memset(&pkt_recv, 0, sizeof(pkt_recv));
-  if (Serial1.available() >= DATA_LEN) {
+  if (Serial.available() >= DATA_LEN) {
     if (!serial_read(pkt_recv, SERIAL_MODE_CLIENT, ONW_ID)) {
       M5.Lcd.setCursor(0, 100);
       M5.Lcd.printf("Failed read\n");
       return;
     }
     pkt_send = init_packet();
+    pkt_send.client_id = ONW_ID;  // Set client_id here
+    pkt_send.mode = SERIAL_MODE_CLIENT; // Set mode to CLIENT
     command_handler(pkt_recv.command, pkt_send);
     pkt_send.start_tick = pkt_recv.start_tick;
     pkt_send.elapsed_tick = millis() - pkt_recv.start_tick;
