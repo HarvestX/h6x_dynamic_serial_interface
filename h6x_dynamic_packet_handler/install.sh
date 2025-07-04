@@ -182,9 +182,8 @@ for platform in "${BUILD_PLATFORMS[@]}"; do
     esac
 done
 
-# TODO : Install CMake config file
-
-# TODO : Create version file
+echo "Installing CMake config files..."
+cp -r "${SCRIPT_DIR}/cmake/"* "${CMAKE_DIR}/"
 
 ldconfig
 
