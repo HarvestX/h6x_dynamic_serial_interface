@@ -7,7 +7,7 @@
 Packet pkt_recv;
 Packet pkt_send;
 
-#define DATA_LEN 7
+#define DATA_LEN 6
 #define ONW_ID 0x01
 
 #define RX_PORTA 33

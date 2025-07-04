@@ -51,13 +51,21 @@ bool serial_read(Packet & pkt, const uint8_t mode, const uint8_t own_id)
     data[read_data_len++] = static_cast<char>(byte);
 
     // data length check
-    if (read_data_len == BASE_PACKET_LENGTH) {
-      data_len += static_cast<uint8_t>(byte) + BASE_PACKET_LENGTH + CRC_LENGTH;
+    if (read_data_len >= BASE_PACKET_LENGTH && data_len == 0) {
+      data_len = static_cast<uint8_t>(byte) + BASE_PACKET_LENGTH + CRC_LENGTH;
+    }
+    if (read_data_len > BASE_PACKET_LENGTH && data_len == 0) {
+      M5.Lcd.setCursor(0, 100);
+      M5.Lcd.printf("Invalid data length\n");
+      return false;  // Invalid data length
     }
 
     if (read_data_len == data_len) {break;}
   }
-  packet_division(&pkt, data, read_data_len);
+  if(!packet_division(&pkt, data, read_data_len)){
+    M5.Lcd.setCursor(0, 100);
+    M5.Lcd.printf("Packet division error\n");
+  }
 
   // Check CRC
   if (!check_crc(&pkt)) {
