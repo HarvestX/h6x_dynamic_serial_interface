@@ -143,6 +143,8 @@ void command_handler(const uint8_t & command, Packet & s_pkt)
         const char * message = "Espressif";
         uint8_t message_len = strnlen(message, sizeof(send_data));
         convert_date_to_ascii_array(message, send_data, &data_len, message_len);
+        memcpy(s_pkt.data, send_data, data_len);
+        s_pkt.data_len = data_len;
         break;
       }
     case CMD_REQUEST_DEVICE_NAME: {
@@ -151,6 +153,8 @@ void command_handler(const uint8_t & command, Packet & s_pkt)
         const char * message = "ESP32";
         uint8_t message_len = strnlen(message, sizeof(send_data));
         convert_date_to_ascii_array(message, send_data, &data_len, message_len);
+        memcpy(s_pkt.data, send_data, data_len);
+        s_pkt.data_len = data_len;
         break;
       }
     case CMD_REQUEST_CURRENT_STATE: {
