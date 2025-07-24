@@ -44,7 +44,7 @@ private:
   void updateConnectionStatus(bool connected);
   void logMessage(const QString & message);
   void populateSerialPorts();
-  std::vector<int16_t> parsePacketData(const QString & text);
+  std::vector<int16_t> parsePacketDataFromTable();
   uint8_t calculateCRC(uint8_t client_id, uint8_t mode, const std::vector<uint8_t> & data);
   void updatePacketCalculation();
   void updateResponseDisplay(const Packet & response, bool success);
@@ -61,6 +61,8 @@ private:
   QString deviceRole;
   QTimer * clientReceiveTimer;
 };
+
+
 
 PacketCalcGUI::PacketCalcGUI(
   const QString & commandLinePort, const QString & role,
@@ -105,11 +107,20 @@ void PacketCalcGUI::setupUI()
     setWindowTitle(title + " (HOST)");
   } else if (deviceRole == "client") {
     setWindowTitle(title + " (CLIENT)");
-    ui->packetDataTextEdit->setEnabled(false);
+    ui->packetDataTableWidget->setEnabled(false);
     ui->calculateButton->setEnabled(false);
     ui->sendPacketButton->setEnabled(false);
     ui->CommandSpinBox->setEnabled(false);
     ui->clientIdSpinBox->setEnabled(false);
+  }
+
+  ui->packetDataTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  for (int row = 0; row < ui->packetDataTableWidget->rowCount(); ++row) {
+    for (int col = 0; col < ui->packetDataTableWidget->columnCount(); ++col) {
+        QTableWidgetItem *item = new QTableWidgetItem();
+        item->setTextAlignment(Qt::AlignCenter);
+        ui->packetDataTableWidget->setItem(row, col, item);
+    }
   }
 
   // Connect signals
@@ -118,7 +129,7 @@ void PacketCalcGUI::setupUI()
   connect(ui->calculateButton, &QPushButton::clicked, this, &PacketCalcGUI::calculatePacket);
   connect(ui->sendPacketButton, &QPushButton::clicked, this, &PacketCalcGUI::sendCustomPacket);
   connect(
-    ui->packetDataTextEdit, &QTextEdit::textChanged, this,
+    ui->packetDataTableWidget, &QTableWidget::cellChanged, this, 
     &PacketCalcGUI::onPacketDataChanged);
   connect(
     ui->clientIdSpinBox, QOverload<int>::of(
@@ -243,24 +254,31 @@ void PacketCalcGUI::onDataReceived(const Packet & packet)
   logMessage(logMsg);
 }
 
-std::vector<int16_t> PacketCalcGUI::parsePacketData(const QString & text)
+std::vector<int16_t> PacketCalcGUI::parsePacketDataFromTable()
 {
   std::vector<int16_t> data;
-  QStringList values = text.split(',', Qt::SkipEmptyParts);
 
-  for (const QString & value : values) {
-    QString trimmed = value.trimmed();
-    bool ok;
-    int16_t num = trimmed.toShort(&ok);
-    if (ok && num >= -1 && num < PACKET_LENGTH_MAX) {
-      data.push_back(num);
-      if (num == -1) {
-        break;
+  for (int row = 0; row < ui->packetDataTableWidget->rowCount(); ++row) {
+    for (int col = 0; col < ui->packetDataTableWidget->columnCount(); ++col) {
+      QTableWidgetItem *item = ui->packetDataTableWidget->item(row, col);
+      if (item) {
+        QString text = item->text().trimmed();
+        if (!text.isEmpty()) {
+          bool ok = false;
+          int16_t num = text.toShort(&ok);
+          if (ok && num >= -1 && num < PACKET_LENGTH_MAX) {
+            data.push_back(num);
+            if (num == -1) {
+              return data;  // -1で終了
+            }
+          }
+        }
       }
     }
   }
   return data;
 }
+
 
 uint8_t PacketCalcGUI::calculateCRC(
   uint8_t client_id, uint8_t command,
@@ -278,12 +296,11 @@ uint8_t PacketCalcGUI::calculateCRC(
 
 void PacketCalcGUI::updatePacketCalculation()
 {
-  QString packetText = ui->packetDataTextEdit->toPlainText();
-  std::vector<int16_t> parsedData = parsePacketData(packetText);
+  std::vector<int16_t> parsedData = parsePacketDataFromTable();
 
   std::vector<uint8_t> validData;
   for (int16_t value : parsedData) {
-    if (value == -1) {break;}
+    if (value == -1) break;
     validData.push_back(static_cast<uint8_t>(value));
   }
 
@@ -292,11 +309,9 @@ void PacketCalcGUI::updatePacketCalculation()
   uint8_t crc = calculateCRC(client_id, command, validData);
 
   ui->calculatedLengthLabel->setText(QString("Calculated Length: %1").arg(validData.size()));
-  ui->calculatedCrcLabel->setText(
-    QString("Calculated CRC: 0x%1").arg(
-      crc, 2, 16, QChar(
-        '0')).toUpper());
+  ui->calculatedCrcLabel->setText(QString("Calculated CRC: 0x%1").arg(crc, 2, 16, QChar('0')).toUpper());
 }
+
 
 void PacketCalcGUI::onPacketDataChanged()
 {
@@ -323,8 +338,7 @@ void PacketCalcGUI::sendCustomPacket()
     return;
   }
 
-  QString packetText = ui->packetDataTextEdit->toPlainText();
-  std::vector<int16_t> parsedData = parsePacketData(packetText);
+  std::vector<int16_t> parsedData = parsePacketDataFromTable();
 
   if (parsedData.empty()) {
     QMessageBox::warning(this, "Invalid Data", "Please enter valid packet data.");

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>600</width>
-    <height>500</height>
+    <height>632</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -70,11 +70,11 @@
        </item>
        <item>
         <widget class="QLabel" name="connectionStatusLabel">
-         <property name="text">
-          <string>Disconnected</string>
-         </property>
          <property name="styleSheet">
           <string notr="true">color: red;</string>
+         </property>
+         <property name="text">
+          <string>Disconnected</string>
          </property>
         </widget>
        </item>
@@ -87,73 +87,6 @@
        <string>Packet Calculator</string>
       </property>
       <layout class="QGridLayout" name="packetLayout">
-       <item row="0" column="0">
-        <widget class="QLabel" name="clientIdLabel">
-         <property name="text">
-          <string>Client ID (1-255):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QSpinBox" name="clientIdSpinBox">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>255</number>
-         </property>
-         <property name="value">
-          <number>1</number>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="CommandLabel">
-         <property name="text">
-          <string>Command (0-255):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QSpinBox" name="CommandSpinBox">
-         <property name="minimum">
-          <number>0</number>
-         </property>
-         <property name="maximum">
-          <number>255</number>
-         </property>
-         <property name="value">
-          <number>0</number>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0" colspan="2">
-        <widget class="QLabel" name="packetDataLabel">
-         <property name="text">
-          <string>Packet Data (50 bytes, use -1 to terminate):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" colspan="2">
-        <widget class="QTextEdit" name="packetDataTextEdit">
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>120</height>
-          </size>
-         </property>
-         <property name="plainText">
-          <string>0,-1</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="calculatedLengthLabel">
-         <property name="text">
-          <string>Calculated Length: 6</string>
-         </property>
-        </widget>
-       </item>
        <item row="4" column="1">
         <widget class="QLabel" name="calculatedCrcLabel">
          <property name="text">
@@ -161,17 +94,69 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
-        <widget class="QPushButton" name="calculateButton">
-         <property name="text">
-          <string>Calculate</string>
+       <item row="3" column="0" colspan="2">
+        <widget class="QTableWidget" name="packetDataTableWidget">
+         <property name="font">
+          <font>
+           <pointsize>6</pointsize>
+          </font>
          </property>
+         <property name="sizeAdjustPolicy">
+          <enum>QAbstractScrollArea::AdjustToContents</enum>
+         </property>
+         <property name="rowCount">
+          <number>10</number>
+         </property>
+         <property name="columnCount">
+          <number>15</number>
+         </property>
+         <row>
+          <property name="text">
+           <string>0</string>
+          </property>
+         </row>
+         <row>
+          <property name="text">
+           <string>1</string>
+          </property>
+         </row>
+         <row/>
+         <row/>
+         <row/>
+         <row/>
+         <row/>
+         <row/>
+         <row/>
+         <row/>
+         <column>
+          <property name="text">
+           <string>0</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>1</string>
+          </property>
+         </column>
+         <column/>
+         <column/>
+         <column/>
+         <column/>
+         <column/>
+         <column/>
+         <column/>
+         <column/>
+         <column/>
+         <column/>
+         <column/>
+         <column/>
+         <column/>
         </widget>
        </item>
-       <item row="5" column="1">
-        <widget class="QPushButton" name="sendPacketButton">
+       <item row="4" column="0">
+        <widget class="QLabel" name="calculatedLengthLabel">
          <property name="text">
-          <string>Send Packet</string>
+          <string>Calculated Length: 6</string>
          </property>
         </widget>
        </item>
@@ -195,6 +180,13 @@
             </property>
            </widget>
           </item>
+          <item row="2" column="0" colspan="3">
+           <widget class="QLabel" name="responseDataAsciiLabel">
+            <property name="text">
+             <string>Data (ASCII): N/A</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="2">
            <widget class="QLabel" name="responseCrcLabel">
             <property name="text">
@@ -209,14 +201,68 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0" colspan="3">
-           <widget class="QLabel" name="responseDataAsciiLabel">
-            <property name="text">
-             <string>Data (ASCII): N/A</string>
-            </property>
-           </widget>
-          </item>
          </layout>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QPushButton" name="sendPacketButton">
+         <property name="text">
+          <string>Send Packet</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QSpinBox" name="clientIdSpinBox">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>255</number>
+         </property>
+         <property name="value">
+          <number>1</number>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="clientIdLabel">
+         <property name="text">
+          <string>Client ID (1-255):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QSpinBox" name="CommandSpinBox">
+         <property name="minimum">
+          <number>0</number>
+         </property>
+         <property name="maximum">
+          <number>255</number>
+         </property>
+         <property name="value">
+          <number>0</number>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0" colspan="2">
+        <widget class="QLabel" name="packetDataLabel">
+         <property name="text">
+          <string>Packet Data (50 bytes, use -1 to terminate):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QPushButton" name="calculateButton">
+         <property name="text">
+          <string>Calculate</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="CommandLabel">
+         <property name="text">
+          <string>Command (0-255):</string>
+         </property>
         </widget>
        </item>
       </layout>
