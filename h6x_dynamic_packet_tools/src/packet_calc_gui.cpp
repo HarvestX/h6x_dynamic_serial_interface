@@ -11,6 +11,11 @@
 #include <QtCore/QDateTime>
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QFile>
+#include <QFileDialog>
 #include <vector>
 #include <cstring>
 #include "ui_packet_calc_gui.h"
@@ -35,9 +40,11 @@ private slots:
   void disconnectFromDevice();
   void calculatePacket();
   void sendCustomPacket();
+  void onPacketLengthChanged(int length);
   void onPacketDataChanged();
   void onDataReceived(const Packet & packet);
   void onClientReceiveTimer();
+  void exportToJson();
 
 private:
   void setupUI();
@@ -49,9 +56,15 @@ private:
   void updatePacketCalculation();
   void updateResponseDisplay(const Packet & response, bool success);
   void setSendingState(bool sending);
+  void get_host_status();
+  void get_client_status();
+  void export_packet_to_json(const QString & mode, uint8_t client_id, uint8_t command, const std::vector<uint8_t> & validData, uint8_t crc);
 
   // UI Components
   Ui::PacketCalcGUI * ui;
+
+  //Received packet data
+  Packet receivedPacket;
 
   // Communication
   h6x_dynamic_serial_port_handler::SerialPortHandler * interface;
@@ -128,6 +141,10 @@ void PacketCalcGUI::setupUI()
   connect(ui->disconnectButton, &QPushButton::clicked, this, &PacketCalcGUI::disconnectFromDevice);
   connect(ui->calculateButton, &QPushButton::clicked, this, &PacketCalcGUI::calculatePacket);
   connect(ui->sendPacketButton, &QPushButton::clicked, this, &PacketCalcGUI::sendCustomPacket);
+  connect(ui->exportButton, &QPushButton::clicked, this, &PacketCalcGUI::exportToJson);
+  connect(
+    ui->PacketDataLengthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+    this, &PacketCalcGUI::onPacketLengthChanged);
   connect(
     ui->packetDataTableWidget, &QTableWidget::cellChanged, this, 
     &PacketCalcGUI::onPacketDataChanged);
@@ -137,6 +154,8 @@ void PacketCalcGUI::setupUI()
   connect(
     ui->CommandSpinBox, QOverload<int>::of(
       &QSpinBox::valueChanged), this, &PacketCalcGUI::onPacketDataChanged);
+
+  onPacketLengthChanged(ui->PacketDataLengthSpinBox->value());
 }
 
 void PacketCalcGUI::populateSerialPorts()
@@ -232,6 +251,9 @@ void PacketCalcGUI::onDataReceived(const Packet & packet)
     .arg(packet.status, 2, 16, QChar('0'))
     .arg(packet.data_len);
 
+  // Store the received packet for later use
+  receivedPacket = packet;
+
   if (packet.data_len > 0) {
     QString dataStr = " Data: ";
     QString asciiStr = " ASCII: ";
@@ -312,6 +334,32 @@ void PacketCalcGUI::updatePacketCalculation()
   ui->calculatedCrcLabel->setText(QString("Calculated CRC: 0x%1").arg(crc, 2, 16, QChar('0')).toUpper());
 }
 
+void PacketCalcGUI::onPacketLengthChanged(int length)
+{
+  const int totalRows = ui->packetDataTableWidget->rowCount();
+  const int totalCols = ui->packetDataTableWidget->columnCount();
+
+  for (int row = 0; row < totalRows; ++row) {
+    for (int col = 0; col < totalCols; ++col) {
+      int index = row * totalCols + col;
+      QTableWidgetItem *item = ui->packetDataTableWidget->item(row, col);
+      if (!item) {
+        item = new QTableWidgetItem();
+        ui->packetDataTableWidget->setItem(row, col, item);
+      }
+      if (index < length) {
+        item->setFlags(item->flags() | Qt::ItemIsEditable);
+        item->setBackground(Qt::white);
+      } else {
+        item->setFlags(item->flags() & ~Qt::ItemIsEditable);
+        item->setBackground(Qt::lightGray);
+        item->setText("");
+      }
+    }
+  }
+
+  updatePacketCalculation();
+}
 
 void PacketCalcGUI::onPacketDataChanged()
 {
@@ -517,6 +565,93 @@ void PacketCalcGUI::onClientReceiveTimer()
     onDataReceived(response);
     updateResponseDisplay(response, true);
   }
+}
+
+void PacketCalcGUI::exportToJson()
+{
+  if (deviceRole == "host") {
+    get_host_status();
+  } else if (deviceRole == "client") {
+    get_client_status();
+  }
+}
+
+void PacketCalcGUI::get_host_status()
+{
+  std::vector<int16_t> parsedData = parsePacketDataFromTable();
+  std::vector<uint8_t> validData;
+  for (int16_t value : parsedData) {
+    if (value == -1) break;
+    validData.push_back(static_cast<uint8_t>(value));
+  }
+
+  uint8_t client_id = static_cast<uint8_t>(ui->clientIdSpinBox->value());
+  uint8_t command = static_cast<uint8_t>(ui->CommandSpinBox->value());
+  uint8_t crc = calculateCRC(client_id, command, validData);
+
+  export_packet_to_json("host", client_id, command, validData, crc);
+}
+
+void PacketCalcGUI::get_client_status()
+{
+  if (receivedPacket.data_len == 0) {
+    QMessageBox::warning(this, "No Data", "No packet data received yet from host.");
+    logMessage("Export failed: No received packet available.");
+    return;
+  }
+  uint8_t client_id = receivedPacket.client_id;
+  uint8_t command = receivedPacket.command;
+  std::vector<uint8_t> validData(receivedPacket.data, receivedPacket.data + receivedPacket.data_len);
+  uint8_t crc = calculateCRC(client_id, command, validData);
+
+  export_packet_to_json("client", client_id, command, validData, crc);
+}
+
+void PacketCalcGUI::export_packet_to_json(
+  const QString & mode,
+  uint8_t client_id,
+  uint8_t command,
+  const std::vector<uint8_t> & validData,
+  uint8_t crc)
+{
+  QDateTime currentTime = QDateTime::currentDateTimeUtc();
+  qint64 unixTime = currentTime.toSecsSinceEpoch();
+
+  QString fileName = QFileDialog::getSaveFileName(this, "Save Packet Data as JSON", "", "JSON Files (*.json)");
+  if (fileName.isEmpty()) return;
+
+  QFile file(fileName);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    QMessageBox::warning(this, "File Error", "Failed to open file for writing.");
+    return;
+  }
+
+  QTextStream out(&file);
+  out << "{\n";
+  out << "  \"header\": {\n";
+  out << "    \"frame_id\": \"packet_calc_gui\",\n";
+  out << "    \"stamp\": {\n";
+  out << "      \"sec\": " << unixTime << ",\n";
+  out << "      \"nanosec\": 0\n";
+  out << "    }\n";
+  out << "  },\n";
+  out << "  \"mode\": \"" << mode << "\",\n";
+  out << "  \"client_id\": " << static_cast<int>(client_id) << ",\n";
+  out << "  \"command\": " << static_cast<int>(command) << ",\n";
+  out << "  \"packet_data\": [";
+
+  for (size_t i = 0; i < validData.size(); ++i) {
+    out << static_cast<int>(validData[i]);
+    if (i != validData.size() - 1) out << ", ";
+  }
+
+  out << "],\n";
+  out << "  \"length\": " << static_cast<int>(validData.size()) << ",\n";
+  out << "  \"crc\": " << static_cast<int>(crc) << "\n";
+  out << "}\n";
+
+  file.close();
+  logMessage("Packet data exported to: " + fileName);
 }
 
 int main(int argc, char * argv[])
