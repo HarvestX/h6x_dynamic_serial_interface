@@ -3,7 +3,7 @@ AR = ar
 OBJCOPY = objcopy
 SIZE = size
 PROJECT = h6x_dynamic_packet_handler
-VERSION = 1.0.0
+VERSION = 0.0.1
 
 SRC_DIR = ../../src
 INC_DIR = ../../include

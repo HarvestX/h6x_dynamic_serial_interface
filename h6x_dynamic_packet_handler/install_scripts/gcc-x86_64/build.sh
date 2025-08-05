@@ -18,7 +18,7 @@ make release
 
 mkdir -p "${INSTALL_PREFIX}/lib/x86_64-linux-gnu"
 
-cp build/libh6x_dynamic_packet_handler.so.1.0.0 "${INSTALL_PREFIX}/lib/x86_64-linux-gnu/"
+cp build/libh6x_dynamic_packet_handler.so.0.0.1 "${INSTALL_PREFIX}/lib/x86_64-linux-gnu/"
 cp build/libh6x_dynamic_packet_handler.so.1 "${INSTALL_PREFIX}/lib/x86_64-linux-gnu/"
 cp build/libh6x_dynamic_packet_handler.so "${INSTALL_PREFIX}/lib/x86_64-linux-gnu/"
 
