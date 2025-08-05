@@ -1,13 +1,13 @@
 #include <Arduino.h>
 #include <M5Core2.h>
-#include "packet_handler.h"
+#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_handler.h"
 #include "command_handler.hpp"
 #include "serial_handler.hpp"
 
 Packet pkt_recv;
 Packet pkt_send;
 
-#define DATA_LEN 7
+#define DATA_LEN 6
 #define ONW_ID 0x01
 
 #define RX_PORTA 33
@@ -28,13 +28,15 @@ void setup()
 void loop()
 {
   memset(&pkt_recv, 0, sizeof(pkt_recv));
-  if (Serial1.available() >= DATA_LEN) {
-    if (!serial_read(pkt_recv, SERIAL_MODE_SECONDARY, ONW_ID)) {
+  if (Serial.available() >= DATA_LEN) {
+    if (!serial_read(pkt_recv, SERIAL_MODE_CLIENT, ONW_ID)) {
       M5.Lcd.setCursor(0, 100);
       M5.Lcd.printf("Failed read\n");
       return;
     }
-    pkt_send = init_packet(ONW_ID, SERIAL_MODE_SECONDARY);
+    pkt_send = init_packet();
+    pkt_send.client_id = ONW_ID;  // Set client_id here
+    pkt_send.mode = SERIAL_MODE_CLIENT; // Set mode to CLIENT
     command_handler(pkt_recv.command, pkt_send);
     pkt_send.start_tick = pkt_recv.start_tick;
     pkt_send.elapsed_tick = millis() - pkt_recv.start_tick;

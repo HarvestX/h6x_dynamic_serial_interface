@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <M5Core2.h>
-#include "packet_handler.h"
+#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_handler.h"
 #include "command_handler.hpp"
 #include "serial_handler.hpp"
 #include "cpu_usage_handler.hpp"
@@ -120,7 +120,7 @@ void loop()
   }
 
   if (Serial1.available() >= DATA_LEN) {
-    if (!serial_read(pkt_recv, SERIAL_MODE_PRIMARY, 0x01)) {
+    if (!serial_read(pkt_recv, SERIAL_MODE_HOST, 0x01)) {
       M5.Lcd.setCursor(0, 0);
       M5.Lcd.printf("Failed read\n");
       return;

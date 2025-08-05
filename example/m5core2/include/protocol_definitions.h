@@ -1,8 +1,11 @@
 #ifndef PROTOCOL_DEFINITIONS_H
 #define PROTOCOL_DEFINITIONS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "h6x_dynamic_packet_definitions_base.h"
+#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_definitions_base.h"
 
 #define OWN_ID 0x01
 #define VERSION 0x01
@@ -16,4 +19,11 @@
 // === CUSTOM ERROR CODES ===
 #define NOW_CALIBRATING     0x05
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif // PROTOCOL_DEFINITIONS_H
+
+
+

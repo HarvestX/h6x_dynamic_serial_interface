@@ -207,8 +207,8 @@ def receive_response_thread(ser):
 
 def main():
     global command
-    ser = serial.Serial('COM12', 115200, timeout=1)
-    print("=== Listening on COM12 ===")
+    ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+    print("=== Listening on /dev/ttyACM0 ===")
 
     threading.Thread(target=command_input_thread, daemon=True).start()
     threading.Thread(target=send_packet_thread, args=(ser,), daemon=True).start()
