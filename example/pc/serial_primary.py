@@ -78,6 +78,7 @@ def receive_response_thread(ser):
         global data_bytes, command
         head = ser.read(1)
         if head != b'$':
+            print(f"[ERROR] header is not '$', received: {head}")
             continue
 
         response = ser.read(4)
@@ -208,8 +209,8 @@ def receive_response_thread(ser):
 
 def main():
     global command
-    ser = serial.Serial('COM12', 115200, timeout=1)
-    print("=== Listening on COM12 ===")
+    ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+    print("=== Listening on /dev/ttyACM0 ===")
 
     threading.Thread(target=receive_response_thread, args=(ser,), daemon=True).start()
 

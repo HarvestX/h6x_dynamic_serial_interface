@@ -24,5 +24,3 @@ extern "C" {
 #endif
 
 #endif // PROTOCOL_DEFINITIONS_H
-
-
