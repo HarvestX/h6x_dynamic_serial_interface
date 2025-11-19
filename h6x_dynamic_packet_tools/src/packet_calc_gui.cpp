@@ -132,6 +132,9 @@ void PacketCalcGUI::setupUI()
   ui->packetDataTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   ui->responseDataTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
+  // Set default baudrate to 115200 (index 4)
+  ui->baudrateComboBox->setCurrentIndex(4);
+
   // Initialize
   setEditableLengthForTable(ui->responseDataTableWidget, 0);
   
@@ -189,7 +192,7 @@ void PacketCalcGUI::populateSerialPorts()
   QStringList filters;
   filters << "ttyACM*";
   filters << "ttyUSB*";
-  QFileInfoList files = dir.entryInfoList(filters, QDir::Files);
+  QFileInfoList files = dir.entryInfoList(filters, QDir::System);
   for (const QFileInfo & file : files) {
     ui->portComboBox->addItem(file.filePath());
   }
@@ -204,7 +207,7 @@ void PacketCalcGUI::populateSerialPorts()
 void PacketCalcGUI::connectToDevice()
 {
   QString port = ui->portComboBox->currentText();
-  int baudrate = ui->baudrateSpinBox->value();
+  int baudrate = ui->baudrateComboBox->currentText().toInt();
 
   if (interface->init_serial(port.toStdString(), baudrate)) {
     interface->set_data_callback(
