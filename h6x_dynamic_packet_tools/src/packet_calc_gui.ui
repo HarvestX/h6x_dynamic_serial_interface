@@ -148,8 +148,8 @@
           <item row="1" column="0">
            <widget class="QTableWidget" name="responseDataTableWidget">
             <property name="font">
-             <font>
-              <pointsize>6</pointsize>
+           <font>
+              <pointsize>10</pointsize>
              </font>
             </property>
             <property name="sizeAdjustPolicy">
@@ -255,7 +255,7 @@
         <widget class="QTableWidget" name="packetDataTableWidget">
          <property name="font">
           <font>
-           <pointsize>6</pointsize>
+           <pointsize>10</pointsize>
           </font>
          </property>
          <property name="sizeAdjustPolicy">

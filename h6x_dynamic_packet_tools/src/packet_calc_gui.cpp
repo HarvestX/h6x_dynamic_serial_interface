@@ -116,6 +116,14 @@ void PacketCalcGUI::setupUI()
 {
   ui->setupUi(this);
 
+  // Configure data tables to 8 columns x 32 rows (wrap at 8, capacity 256)
+  const int kCols = 8;
+  const int kRows = 32;
+  ui->packetDataTableWidget->setColumnCount(kCols);
+  ui->packetDataTableWidget->setRowCount(kRows);
+  ui->responseDataTableWidget->setColumnCount(kCols);
+  ui->responseDataTableWidget->setRowCount(kRows);
+
   QString title = this->windowTitle();
   if (deviceRole == "host") {
     setWindowTitle(title + " (HOST)");
@@ -140,9 +148,9 @@ void PacketCalcGUI::setupUI()
   
   for (int row = 0; row < ui->packetDataTableWidget->rowCount(); ++row) {
     for (int col = 0; col < ui->packetDataTableWidget->columnCount(); ++col) {
-        QTableWidgetItem *item = new QTableWidgetItem();
-        item->setTextAlignment(Qt::AlignCenter);
-        ui->packetDataTableWidget->setItem(row, col, item);
+      QTableWidgetItem *item = new QTableWidgetItem();
+      item->setTextAlignment(Qt::AlignCenter);
+      ui->packetDataTableWidget->setItem(row, col, item);
     }
   }
 
