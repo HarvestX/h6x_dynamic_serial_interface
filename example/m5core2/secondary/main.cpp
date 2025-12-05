@@ -34,9 +34,7 @@ void loop()
       M5.Lcd.printf("Failed read\n");
       return;
     }
-    pkt_send = init_packet();
-    pkt_send.client_id = ONW_ID;  // Set client_id here
-    pkt_send.mode = SERIAL_MODE_CLIENT; // Set mode to CLIENT
+    pkt_send = init_packet_client_pub(ONW_ID, ERR_SUCCESS);
     command_handler(pkt_recv.command, pkt_send);
     pkt_send.start_tick = pkt_recv.start_tick;
     pkt_send.elapsed_tick = millis() - pkt_recv.start_tick;

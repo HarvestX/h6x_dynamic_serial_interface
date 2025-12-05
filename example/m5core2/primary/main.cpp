@@ -58,10 +58,7 @@ void drawMenu(int highlightIndex = -1)
 
 void sendSelectedCommand()
 {
-  pkt_send = init_packet();
-  pkt_send.client_id = 0x01; // M5Core2 ID
-  pkt_send.mode = SERIAL_MODE_HOST;
-  pkt_send.command = return_values[selected_index];
+  pkt_send = init_packet_server_pub(0x01, return_values[selected_index]);
   if (pkt_send.command == 0x03) {
     pkt_send.data[0] = (selected_index == 3) ? 0x05 : 0x01;
     pkt_send.data_len = 1;

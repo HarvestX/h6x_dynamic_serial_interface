@@ -24,3 +24,21 @@ Packet init_packet()
   pkt.is_valid = true;
   return pkt;
 }
+
+Packet init_packet_server_pub(const uint8_t client_id, const uint8_t command)
+{
+  Packet pkt = init_packet();
+  pkt.mode = SERIAL_MODE_HOST;
+  pkt.client_id = client_id;
+  pkt.command = command;
+  return pkt;
+}
+
+Packet init_packet_client_pub(const uint8_t own_id, const uint8_t status)
+{
+  Packet pkt = init_packet();
+  pkt.mode = SERIAL_MODE_CLIENT;
+  pkt.client_id = own_id;
+  pkt.status = status;
+  return pkt;
+}
