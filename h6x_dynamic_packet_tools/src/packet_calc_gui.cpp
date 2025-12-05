@@ -21,7 +21,6 @@
 #include "ui_packet_calc_gui.h"
 
 #include "h6x_dynamic_packet_handler/h6x_dynamic_packet_definitions_base.h"
-#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_big_endian.h"
 #include "h6x_dynamic_packet_handler/h6x_dynamic_packet_crc8.h"
 #include "h6x_dynamic_serial_port_handler/serial_port_handler.hpp"
 
