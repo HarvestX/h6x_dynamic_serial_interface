@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>h6x_dynamic_serial_port_handler</name>
-  <version>0.0.1</version>
+  <version>0.1.0</version>
   <description>Serial port handler for h6x_dynamic_serial_interface</description>
   <maintainer email="ray255ar@gmail.com">Ar-Ray-code</maintainer>
   <license>Apache-2.0</license>
