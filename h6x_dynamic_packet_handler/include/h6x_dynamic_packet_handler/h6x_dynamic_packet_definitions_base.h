@@ -55,9 +55,7 @@ typedef struct Packet
 
 Packet init_packet();
 
-// v0.2.0 additions
 Packet init_packet_server_pub(const uint8_t client_id, const uint8_t command);
-
 Packet init_packet_client_pub(const uint8_t own_id, const uint8_t status);
 
 
