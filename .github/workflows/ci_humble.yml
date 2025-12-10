@@ -33,3 +33,5 @@ jobs:
           vcs-repo-file-url: build_depends.repos
           package-name: |
             h6x_dynamic_packet_handler
+            h6x_dynamic_packet_tools
+            h6x_dynamic_serial_port_handler
