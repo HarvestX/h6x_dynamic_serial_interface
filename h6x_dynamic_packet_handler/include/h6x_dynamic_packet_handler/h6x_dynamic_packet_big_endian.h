@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Note: This header is kept for compatibility reasons.
+// Use `Ar-Ray-code/h6xserial_idl` instead.
+
 #ifndef H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_BIG_ENDIAN_HPP
 #define H6X_DYNAMIC_PACKET_HANDLER__H6X_DYNAMIC_PACKET_BIG_ENDIAN_HPP
 

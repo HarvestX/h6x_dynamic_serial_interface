@@ -122,6 +122,10 @@ Packet get_received_packet(const char * input, const int32_t input_len, const ui
   return r_pkt;
 }
 
+uint16_t get_total_packet_length(const Packet * packet)
+{
+  return (uint16_t)(packet->data_len + ADDITIONAL_PACKET_LENGTH);
+}
 
 uint8_t get_serial_data(char * input_buf, const int max_len, serial_getchar_fn_t getchar_fn)
 {

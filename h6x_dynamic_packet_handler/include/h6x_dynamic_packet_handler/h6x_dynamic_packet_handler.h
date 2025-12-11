@@ -42,9 +42,9 @@ bool check_crc(const Packet * pkt);
 
 bool create_packet(const Packet * pkt, char * send_packet);
 
-Packet get_received_packet(const char * input, const int32_t input_len, const uint8_t client_id);
+uint16_t get_total_packet_length(const Packet * packet);
 
-int32_t process_msg(const char * input, int32_t input_len, char * output, int32_t output_max_len);
+Packet get_received_packet(const char * input, const int32_t input_len, const uint8_t client_id);
 
 #ifdef __cplusplus
 }

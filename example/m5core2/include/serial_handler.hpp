@@ -62,7 +62,7 @@ bool serial_read(Packet & pkt, const uint8_t mode, const uint8_t own_id)
 
     if (read_data_len == data_len) {break;}
   }
-  if(!packet_division(&pkt, data, read_data_len)){
+  if (!packet_division(&pkt, data, read_data_len)) {
     M5.Lcd.setCursor(0, 100);
     M5.Lcd.printf("Packet division error\n");
   }

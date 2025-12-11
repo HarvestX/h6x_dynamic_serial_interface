@@ -1,8 +1,16 @@
-/*
- * Copyright (c) 2025 HarvestX Inc.
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+// Copyright 2025 HarvestX Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMainWindow>
@@ -21,7 +29,6 @@
 #include "ui_packet_calc_gui.h"
 
 #include "h6x_dynamic_packet_handler/h6x_dynamic_packet_definitions_base.h"
-#include "h6x_dynamic_packet_handler/h6x_dynamic_packet_big_endian.h"
 #include "h6x_dynamic_packet_handler/h6x_dynamic_packet_crc8.h"
 #include "h6x_dynamic_serial_port_handler/serial_port_handler.hpp"
 
@@ -40,7 +47,7 @@ private slots:
   void disconnectFromDevice();
   void calculatePacket();
   void sendCustomPacket();
-  void setEditableLengthForTable(QTableWidget* table, int length);
+  void setEditableLengthForTable(QTableWidget * table, int length);
   void onPacketDataChanged();
   void onDataReceived(const Packet & packet);
   void onClientReceiveTimer();
@@ -58,7 +65,9 @@ private:
   void setSendingState(bool sending);
   void get_host_status();
   void get_client_status();
-  void export_packet_to_json(const QString & mode, uint8_t client_id, uint8_t command, const std::vector<uint8_t> & validData, uint8_t crc);
+  void export_packet_to_json(
+    const QString & mode, uint8_t client_id, uint8_t command,
+    const std::vector<uint8_t> & validData, uint8_t crc);
   void export_response_to_json();
 
   // UI Components
@@ -75,7 +84,6 @@ private:
   QString deviceRole;
   QTimer * clientReceiveTimer;
 };
-
 
 
 PacketCalcGUI::PacketCalcGUI(
@@ -145,10 +153,10 @@ void PacketCalcGUI::setupUI()
 
   // Initialize
   setEditableLengthForTable(ui->responseDataTableWidget, 0);
-  
+
   for (int row = 0; row < ui->packetDataTableWidget->rowCount(); ++row) {
     for (int col = 0; col < ui->packetDataTableWidget->columnCount(); ++col) {
-      QTableWidgetItem *item = new QTableWidgetItem();
+      QTableWidgetItem * item = new QTableWidgetItem();
       item->setTextAlignment(Qt::AlignCenter);
       ui->packetDataTableWidget->setItem(row, col, item);
     }
@@ -164,14 +172,15 @@ void PacketCalcGUI::setupUI()
 
 
   auto valueChangedInt = QOverload<int>::of(&QSpinBox::valueChanged);
-  connect(ui->PacketDataLengthSpinBox, valueChangedInt, this,
-        [this](int len) {
-          setEditableLengthForTable(ui->packetDataTableWidget, len);
-          updatePacketCalculation();
-        });
+  connect(
+    ui->PacketDataLengthSpinBox, valueChangedInt, this,
+    [this](int len) {
+      setEditableLengthForTable(ui->packetDataTableWidget, len);
+      updatePacketCalculation();
+    });
 
   connect(
-    ui->packetDataTableWidget, &QTableWidget::cellChanged, this, 
+    ui->packetDataTableWidget, &QTableWidget::cellChanged, this,
     &PacketCalcGUI::onPacketDataChanged);
   connect(
     ui->clientIdSpinBox, QOverload<int>::of(
@@ -298,7 +307,7 @@ std::vector<int16_t> PacketCalcGUI::parsePacketDataFromTable()
 
   for (int row = 0; row < ui->packetDataTableWidget->rowCount(); ++row) {
     for (int col = 0; col < ui->packetDataTableWidget->columnCount(); ++col) {
-      QTableWidgetItem *item = ui->packetDataTableWidget->item(row, col);
+      QTableWidgetItem * item = ui->packetDataTableWidget->item(row, col);
       if (item) {
         QString text = item->text().trimmed();
         if (!text.isEmpty()) {
@@ -338,7 +347,7 @@ void PacketCalcGUI::updatePacketCalculation()
 
   std::vector<uint8_t> validData;
   for (int16_t value : parsedData) {
-    if (value == -1) break;
+    if (value == -1) {break;}
     validData.push_back(static_cast<uint8_t>(value));
   }
 
@@ -347,12 +356,15 @@ void PacketCalcGUI::updatePacketCalculation()
   uint8_t crc = calculateCRC(client_id, command, validData);
 
   ui->calculatedLengthLabel->setText(QString("Calculated Length: %1").arg(validData.size()));
-  ui->calculatedCrcLabel->setText(QString("Calculated CRC: 0x%1").arg(crc, 2, 16, QChar('0')).toUpper());
+  ui->calculatedCrcLabel->setText(
+    QString("Calculated CRC: 0x%1").arg(
+      crc, 2, 16, QChar(
+        '0')).toUpper());
 }
 
-void PacketCalcGUI::setEditableLengthForTable(QTableWidget* table, int length)
+void PacketCalcGUI::setEditableLengthForTable(QTableWidget * table, int length)
 {
-  if (!table) return;
+  if (!table) {return;}
 
   const int totalRows = table->rowCount();
   const int totalCols = table->columnCount();
@@ -361,7 +373,7 @@ void PacketCalcGUI::setEditableLengthForTable(QTableWidget* table, int length)
     for (int col = 0; col < totalCols; ++col) {
       const int index = row * totalCols + col;
 
-      QTableWidgetItem* item = table->item(row, col);
+      QTableWidgetItem * item = table->item(row, col);
       if (!item) {
         item = new QTableWidgetItem();
         table->setItem(row, col, item);
@@ -498,7 +510,7 @@ void PacketCalcGUI::logMessage(const QString & message)
 
 void PacketCalcGUI::updateResponseDisplay(const Packet & response, bool success)
 {
-  QTableWidget* table = ui->responseDataTableWidget;
+  QTableWidget * table = ui->responseDataTableWidget;
 
   if (success && response.is_valid) {
     ui->responseCommandLabel->setText(
@@ -510,8 +522,8 @@ void PacketCalcGUI::updateResponseDisplay(const Packet & response, bool success)
     if (table) {
       const int rows = table->rowCount();
       const int cols = table->columnCount();
-      const int cap  = rows * cols;
-      const int len  = std::min<int>(response.data_len, cap);
+      const int cap = rows * cols;
+      const int len = std::min<int>(response.data_len, cap);
 
       setEditableLengthForTable(table, len);
 
@@ -519,7 +531,7 @@ void PacketCalcGUI::updateResponseDisplay(const Packet & response, bool success)
       int idx = 0;
       for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
-          QTableWidgetItem* item = table->item(r, c);
+          QTableWidgetItem * item = table->item(r, c);
           if (!item) {
             item = new QTableWidgetItem();
             table->setItem(r, c, item);
@@ -549,7 +561,7 @@ void PacketCalcGUI::updateResponseDisplay(const Packet & response, bool success)
       table->setUpdatesEnabled(false);
       for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
-          if (auto* item = table->item(r, c)) item->setText("");
+          if (auto * item = table->item(r, c)) {item->setText("");}
         }
       }
       table->setUpdatesEnabled(true);
@@ -621,7 +633,7 @@ void PacketCalcGUI::get_host_status()
   std::vector<int16_t> parsedData = parsePacketDataFromTable();
   std::vector<uint8_t> validData;
   for (int16_t value : parsedData) {
-    if (value == -1) break;
+    if (value == -1) {break;}
     validData.push_back(static_cast<uint8_t>(value));
   }
 
@@ -641,7 +653,8 @@ void PacketCalcGUI::get_client_status()
   }
   uint8_t client_id = receivedPacket.client_id;
   uint8_t command = receivedPacket.command;
-  std::vector<uint8_t> validData(receivedPacket.data, receivedPacket.data + receivedPacket.data_len);
+  std::vector<uint8_t> validData(receivedPacket.data,
+    receivedPacket.data + receivedPacket.data_len);
   uint8_t crc = calculateCRC(client_id, command, validData);
 
   export_packet_to_json("client", client_id, command, validData, crc);
@@ -657,8 +670,10 @@ void PacketCalcGUI::export_packet_to_json(
   QDateTime currentTime = QDateTime::currentDateTimeUtc();
   qint64 unixTime = currentTime.toSecsSinceEpoch();
 
-  QString fileName = QFileDialog::getSaveFileName(this, "Save Packet Data as JSON", "", "JSON Files (*.json)");
-  if (fileName.isEmpty()) return;
+  QString fileName = QFileDialog::getSaveFileName(
+    this, "Save Packet Data as JSON", "",
+    "JSON Files (*.json)");
+  if (fileName.isEmpty()) {return;}
 
   QFile file(fileName);
   if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -682,7 +697,7 @@ void PacketCalcGUI::export_packet_to_json(
 
   for (size_t i = 0; i < validData.size(); ++i) {
     out << static_cast<int>(validData[i]);
-    if (i != validData.size() - 1) out << ", ";
+    if (i != validData.size() - 1) {out << ", ";}
   }
 
   out << "],\n";
@@ -704,10 +719,10 @@ void PacketCalcGUI::export_response_to_json()
   }
 
   uint8_t client_id = receivedPacket.client_id;
-  uint8_t command   = receivedPacket.command;
+  uint8_t command = receivedPacket.command;
 
   std::vector<uint8_t> validData(receivedPacket.data,
-                                 receivedPacket.data + receivedPacket.data_len);
+    receivedPacket.data + receivedPacket.data_len);
 
   uint8_t crc = calculateCRC(client_id, command, validData);
 
